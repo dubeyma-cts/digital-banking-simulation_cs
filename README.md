@@ -2,7 +2,7 @@
 # 🇮🇳 Indian Net Bank  
 ### A Banking Project (Case Study)
 
-!Logo
+!Logo <img src="./images/logo.png" alt="Project Logo" width="100"/>
 
 ## 📌 Overview  
 Indian Net Bank is a simulated online banking system designed as a **case study project** to understand the workflows, modules, and architecture of internet banking applications.  
