@@ -60,13 +60,13 @@ Table of Contents
 | Contributor | Role |
 | --- | --- |
 | Omprakash Pandey | Product Manager |
-| Manish Dubey | Technical Lead |
-| Uttam Bhatia | IT SME |
-| Navhin | IT SME |
-| Sandhya | IT SME |
-| Vishal | IT SME |
-| Saipriya | IT SME |
-| Sudhir | IT SME |
+| Manish Dubey | Technical Lead + ensure design quality+ manage stockholders, project lifecycle |
+| Uttam Bhatia | IT SMEArchitecture & design + requirements |
+| Navhin | Security governance & compliance |
+| Sandhya | Db and data management |
+| Vishal | Requirement gathering & UI UX |
+| Saipriya | Design diagrams |
+| Sudhir | Infrastructure & reporting |
 
 *   1.  Reviewer / Signoff
 
