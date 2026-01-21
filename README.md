@@ -1,6 +1,6 @@
 
 ### Team Name(Group2) - Blueprint Brigade
-*   1.  Contributors
+##  Contributors
 
 | Contributor | Role |
 | --- | --- |
