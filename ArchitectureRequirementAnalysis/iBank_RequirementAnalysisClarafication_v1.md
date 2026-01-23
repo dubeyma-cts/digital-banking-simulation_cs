@@ -223,7 +223,7 @@ This document presents the requirement analysis for the Online Banking Applicati
 # Use-Case Diagram
 
 \[Use-Case Diagram Placeholder: UML diagram showing Customer, Bank Staff, and System interacting with UC1-UC9\]
-![](useCaseDigrams_F.png)
+![](diagrams/useCaseDigrams_F.png)
 
 
 # 4\. Use-case - Non-Functional requirements
@@ -351,7 +351,7 @@ This document presents the requirement analysis for the Online Banking Applicati
   - Responsive and accessible UI across devices
 
 # 4.1 Use-case Diagram - Non-functional requirements
-![](useCaseDiagrams_NF.png)
+![](diagrams/useCaseDiagrams_NF.png)
 
 
 # 8\. Clarification Questions
