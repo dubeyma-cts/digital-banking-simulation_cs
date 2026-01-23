@@ -18,6 +18,7 @@ Basic Flow:
 5. Onboarding Officer completes manual review if required and marks registration approved or rejected; system records decision.
 Alternate Flow: If KYC fails at human review, registration is rejected and customer notified with remediation steps.
 Postconditions: Account created and activation recorded; AI decision, evidence and any human overrides are logged for audit.
+![UC-REG-01](diagrams/usecases/UC-REG-01.png)
 
 ---
 
@@ -35,6 +36,7 @@ Basic Flow:
 4b. If AI Agent cannot verify identity or flags high risk, it escalates to the security/ops team for manual re-activation and investigation.
 Alternate Flow: Locked accounts unresolved by AI Agent remain locked until manual re-activation; all actions are recorded.
 Postconditions: Successful logins, AI interventions, and lock/unlock events are logged and retained for audit.
+![UC-AUTH-01](diagrams/usecases/UC-AUTH-01.png)
 
 ---
 
@@ -48,6 +50,7 @@ Basic Flow:
 2. System validates and persists the configuration.
 3. During withdrawal, system enforces current configured limits and rejects transactions that violate rules.
 Postconditions: Config changes are auditable; transactions conform to configured limits.
+![UC-ACC-01](diagrams/usecases/UC-ACC-01.png)
 
 ---
 
@@ -61,6 +64,7 @@ Basic Flow:
 2. System computes daily overdraft charges using the configured rate and posts charges to accounts.
 3. Transaction and charge records are logged for reconciliation and audit.
 Postconditions: Overdraft charges applied and traceable in ledger and reports.
+![UC-OD-01](diagrams/usecases/UC-OD-01.png)
 
 ---
 
@@ -77,6 +81,7 @@ Basic Flow:
 3b. If AI Agent cannot confidently match or detects anomalies (e.g., mismatched amount, poor image quality), it creates a task and escalates to the Banker for manual review.
 4. If cheque clears, account is credited; if bounced, fine is applied and status updated (AI can suggest bounce reason and remediation steps).
 Postconditions: Cheque lifecycle events, AI actions and banker interventions are recorded and auditable.
+![UC-CHE-01](diagrams/usecases/UC-CHE-01.png)
 
 ---
 
@@ -92,6 +97,7 @@ Basic Flow:
 3a. If no anomalies, AI stores the report and evidence artifacts for audit retention.
 3b. If anomalies are detected, AI notifies the Treasury Officer with pre-populated findings for validation and remediation.
 Postconditions: Report available for review; AI flags and human remediation actions are logged and retained per retention policy.
+![UC-REC-01](diagrams/usecases/UC-REC-01.png)
 
 ---
 
@@ -107,6 +113,7 @@ Basic Flow:
 2b. If AI Agent flags an exception or high-risk pattern, it creates an approval task for the human approver with pre-populated evidence.
 3. For scheduled payments, system executes at scheduled time and retains audit trail.
 Postconditions: Transaction records are stored with sufficient detail to support compliance and investigations; AI decisions and escalations are logged.
+![UC-TRX-01](diagrams/usecases/UC-TRX-01.png)
 
 ---
 
@@ -123,6 +130,7 @@ Basic Flow:
 3b. If AI Agent flags high-risk or uncertain cases, it raises an alert to the AML Officer with pre-populated evidence for manual investigation.
 4. AML Officer reviews alerted cases, escalates to law-enforcement reporting if required, and records disposition.
 Postconditions: Alerts, AI dispositions and human investigations are logged; evidence retained for regulator review.
+![UC-AML-01](diagrams/usecases/UC-AML-01.png)
 
 ---
 
@@ -138,6 +146,7 @@ Basic Flow:
 3a. If the package is complete and passes automated integrity checks, AI delivers the evidence package to the auditor and logs retrieval.
 3b. If gaps or integrity issues are detected, AI notifies the Internal Audit Lead and provides pre-populated remediation tasks for manual validation.
 Postconditions: Evidence package delivered or escalated; retrieval and remediation actions are logged.
+![UC-AUD-01](diagrams/usecases/UC-AUD-01.png)
 
 ---
 
