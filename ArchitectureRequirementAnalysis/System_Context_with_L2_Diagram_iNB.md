@@ -79,7 +79,7 @@ The following diagram provides the **C4 Level 2 (Container)** view for the iNB O
 <!-- Diagram placeholder (image was embedded in the .docx) -->
 
 ---
-![C4 Level 2 Container Diagram](SystemContext_Diagram.png)
+![C4 Level 2 Container Diagram](diagrams/SystemContext_Diagram.png)
 # Appendix B: C4 Level 2 – Container Descriptions
 
 ## Web UI (Responsive)
