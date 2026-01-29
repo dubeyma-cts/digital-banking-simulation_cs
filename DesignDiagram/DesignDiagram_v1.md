@@ -1,6 +1,6 @@
-**4. Design Diagrams
-4.1 High-Level System Architecture Diagram
-Description:**
+**4. Design Diagrams**
+**4.1 High-Level System Architecture Diagram**
+**Description:**
 The Online Banking Application for Indian Net Bank (iNB) follows a centralized web-based architecture. Customers access the system through a standard web browser. Requests are processed by an ASP.NET application hosted on IIS, which communicates with a backend SQL Server database.
  
 **Architecture Flow:**
@@ -8,7 +8,7 @@ The Online Banking Application for Indian Net Bank (iNB) follows a centralized w
 •	IIS hosts the ASP.NET application and manages request handling, session management, and security.
 •	Business logic is executed in a separate Business Logic Layer (BLL).
 •	All persistent data is stored and retrieved from the SQL Server database through a Data Access Layer (DAL).
-Architectural Benefit:
+**Architectural Benefit:**
 This design enforces separation of concerns and simplifies migration from Classic ASP to ASP.NET by clearly isolating presentation, business logic, and data access.
 
 **4.2 Layered Architecture Diagram**
