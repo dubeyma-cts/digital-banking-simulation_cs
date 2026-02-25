@@ -1,0 +1,16 @@
+<div class="transfer-success-page" *ngIf="transfer">
+  <h2>Fund Transfer Successful</h2>
+  <p class="success-text">{{ transfer.message }}</p>
+
+  <div class="receipt-card">
+    <div class="row"><span>Transaction ID</span><strong>{{ transfer.transactionId }}</strong></div>
+    <div class="row"><span>Reference</span><strong>{{ transfer.reference }}</strong></div>
+    <div class="row"><span>From Account</span><strong>{{ transfer.fromAccountNumber }}</strong></div>
+    <div class="row"><span>Payee Account</span><strong>{{ transfer.payeeAccountNumber }}</strong></div>
+    <div class="row"><span>Payee Name</span><strong>{{ transfer.payeeAccountHolderName }}</strong></div>
+    <div class="row"><span>Amount</span><strong>{{ transfer.amount | currency:transfer.currency }}</strong></div>
+    <div class="row"><span>Date Time</span><strong>{{ transfer.transferredAt }}</strong></div>
+  </div>
+
+  <button type="button" class="new-transfer-btn" (click)="newTransfer()">New Fund Transfer</button>
+</div>

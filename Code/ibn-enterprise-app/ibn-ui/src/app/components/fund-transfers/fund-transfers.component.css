@@ -1,0 +1,129 @@
+.fund-transfer-component {
+  width: 100%;
+}
+
+.transfer-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-row label {
+  color: #1e3a5f;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.form-row input,
+.form-row select,
+.form-row textarea {
+  border: 1px solid #b6d6ff;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  background: #f8fbff;
+}
+
+.form-row input:focus,
+.form-row select:focus,
+.form-row textarea:focus {
+  outline: none;
+  border-color: #0b66d1;
+  box-shadow: 0 0 0 3px rgba(11, 102, 209, 0.12);
+  background: #ffffff;
+}
+
+.transfer-btn {
+  width: fit-content;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 18px;
+  background: linear-gradient(180deg, #0f4ea8 0%, #0b66d1 100%);
+  color: #ffffff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.transfer-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.success-message {
+  margin-top: 16px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid #86efac;
+  background: #f0fdf4;
+  color: #166534;
+  font-weight: 600;
+}
+
+.error-message {
+  margin-top: 8px;
+  color: #b91c1c;
+  font-weight: 600;
+}
+
+.balance-helper {
+  margin-top: -4px;
+  color: #1e3a5f;
+  font-weight: 600;
+}
+
+.back-btn {
+  border: 1px solid #b6d6ff;
+  border-radius: 8px;
+  padding: 8px 12px;
+  background: #fff;
+  color: #1e3a5f;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 12px;
+}
+
+.transfer-success-page {
+  margin-top: 8px;
+}
+
+.success-text {
+  color: #166534;
+  font-weight: 600;
+}
+
+.receipt-card {
+  margin-top: 16px;
+  border: 1px solid #b6d6ff;
+  border-radius: 8px;
+  padding: 12px;
+  background: #f8fbff;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #e2ebf8;
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.new-transfer-btn {
+  margin-top: 16px;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  background: #0b66d1;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}

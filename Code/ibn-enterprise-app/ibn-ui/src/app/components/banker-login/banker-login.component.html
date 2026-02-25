@@ -1,0 +1,149 @@
+<div class="login-container">
+  <div class="login-card">
+    <!-- Breadcrumb Navigation -->
+    <div class="breadcrumb-section">
+      <div class="breadcrumb-item">
+        <a href="javascript:void(0)" (click)="onBackToPersonalLogin()" class="breadcrumb-link">Personal</a>
+      </div>
+      <span class="breadcrumb-separator">/</span>
+      <div class="breadcrumb-item active">
+        <span class="breadcrumb-text">Banker</span>
+      </div>
+    </div>
+
+    <!-- Logo/Header -->
+    <div class="login-header">
+      <h1>Digital Banking</h1>
+      <p class="subtitle">Banker Login</p>
+    </div>
+
+    <!-- Error Message -->
+    <div class="alert alert-error" *ngIf="showErrorMessage">
+      <div class="alert-content">
+        <span class="alert-icon">⚠️</span>
+        <p class="alert-message">{{ errorMessage }}</p>
+      </div>
+    </div>
+
+    <!-- Login Form -->
+    <form class="login-form" (ngSubmit)="onLogin()">
+      <!-- Login ID Field -->
+      <div class="form-group">
+        <label for="loginId" class="form-label">
+          <span class="label-icon">👤</span>
+          Login ID
+        </label>
+        <input
+          type="text"
+          id="loginId"
+          [(ngModel)]="loginId"
+          name="loginId"
+          class="form-input"
+          placeholder="Enter your Login ID"
+          [disabled]="isAccountLocked || isLoading"
+          autocomplete="off"
+          aria-label="Login ID"
+          required
+        />
+      </div>
+
+      <!-- Password Field -->
+      <div class="form-group">
+        <label for="password" class="form-label">
+          <span class="label-icon">🔐</span>
+          Password
+        </label>
+        <input
+          type="password"
+          id="password"
+          [(ngModel)]="password"
+          name="password"
+          class="form-input"
+          placeholder="Enter your Password"
+          [disabled]="isAccountLocked || isLoading"
+          autocomplete="off"
+          aria-label="Password"
+          required
+        />
+      </div>
+
+      <!-- CAPTCHA Field (appears after first failed attempt) -->
+      <div class="form-group" *ngIf="showCaptcha && !isAccountLocked">
+        <label for="captcha" class="form-label">
+          <span class="label-icon">🤖</span>
+          Security Verification
+        </label>
+        <div class="captcha-container">
+          <div class="captcha-question">
+            <p>What is <strong>2 + 3</strong>?</p>
+          </div>
+          <input
+            type="text"
+            id="captcha"
+            [(ngModel)]="captchaValue"
+            name="captcha"
+            class="form-input captcha-input"
+            placeholder="Enter the answer"
+            [disabled]="isLoading"
+            autocomplete="off"
+            aria-label="CAPTCHA"
+            inputmode="numeric"
+          />
+          <p class="captcha-error" *ngIf="captchaError">{{ captchaError }}</p>
+        </div>
+      </div>
+
+      <!-- Login Button -->
+      <button
+        type="submit"
+        class="btn-login"
+        [disabled]="isAccountLocked || isLoading"
+        [class.btn-loading]="isLoading"
+      >
+        <span *ngIf="!isLoading" class="btn-text">
+          <span class="btn-icon">🔓</span>
+          Logon
+        </span>
+        <span *ngIf="isLoading" class="btn-text">
+          <span class="spinner"></span>
+          Logging in...
+        </span>
+      </button>
+    </form>
+
+    <!-- Help Links -->
+    <div class="help-section" *ngIf="!isAccountLocked">
+      <div class="help-links">
+        <a href="javascript:void(0)" (click)="onForgotPassword()" class="help-link">
+          <span class="link-icon">🔑</span>
+          Forgot Password?
+        </a>
+      </div>
+    </div>
+
+    <!-- Account Locked Message -->
+    <div class="locked-message" *ngIf="isAccountLocked">
+      <p class="locked-icon">🔒</p>
+      <p class="locked-text">Account Locked</p>
+      <p class="locked-description">
+        Your account has been locked due to multiple failed login attempts.
+        <br />
+        Please contact the administrator for assistance.
+      </p>
+      <div class="contact-info">
+        <p>📞 Support: 1-800-BANKING</p>
+        <p>📧 Email: support@digitalbanking.com</p>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="login-footer">
+      <p class="footer-text">🔒 Your data is encrypted and secure</p>
+      <p class="footer-links">
+        <a href="javascript:void(0)">Privacy Policy</a> | 
+        <a href="javascript:void(0)">Terms of Service</a> | 
+        <a href="javascript:void(0)">Help Center</a>
+      </p>
+    </div>
+  </div>
+</div>

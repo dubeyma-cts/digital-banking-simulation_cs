@@ -1,0 +1,122 @@
+<div class="fund-transfer-component">
+  <ng-container *ngIf="!transferSuccessDetails; else transferSuccessBlock">
+  <form class="transfer-form" (ngSubmit)="onTransfer()" #transferForm="ngForm">
+    <div class="form-row">
+      <label for="fromAccount">From Account</label>
+      <select
+        id="fromAccount"
+        name="fromAccountId"
+        [(ngModel)]="transferRequest.fromAccountId"
+        (ngModelChange)="onAmountOrSourceChange()"
+        required
+      >
+        <option value="" disabled>Select account</option>
+        <option *ngFor="let account of fromAccounts" [value]="account.accountId">
+          {{ account.accountNumber }} ({{ account.accountType }})
+        </option>
+      </select>
+    </div>
+
+    <div class="form-row">
+      <label for="payeeAccountNumber">Payee Account Number</label>
+      <input
+        id="payeeAccountNumber"
+        name="payeeAccountNumber"
+        type="text"
+        [(ngModel)]="transferRequest.payeeAccountNumber"
+        (ngModelChange)="onPayeeFieldChange()"
+        placeholder="Enter payee account number"
+        required
+      />
+    </div>
+
+    <div class="form-row">
+      <label for="confirmPayeeAccountNumber">Confirm Payee Account Number</label>
+      <input
+        id="confirmPayeeAccountNumber"
+        name="confirmPayeeAccountNumber"
+        type="text"
+        [(ngModel)]="transferRequest.confirmPayeeAccountNumber"
+        (blur)="validatePayeeDetails()"
+        (ngModelChange)="onPayeeFieldChange()"
+        placeholder="Re-enter payee account number"
+        required
+      />
+    </div>
+
+    <div class="form-row">
+      <label for="accountHolderName">Account Holder Name</label>
+      <input
+        id="accountHolderName"
+        name="accountHolderName"
+        type="text"
+        [ngModel]="transferRequest.accountHolderName"
+        readonly
+      />
+    </div>
+
+    <div class="error-message" *ngIf="payeeValidationMessage">{{ payeeValidationMessage }}</div>
+
+    <div class="form-row">
+      <label for="amount">Amount</label>
+      <input
+        id="amount"
+        name="amount"
+        type="number"
+        min="1"
+        step="0.01"
+        [(ngModel)]="transferRequest.amount"
+        (ngModelChange)="onAmountOrSourceChange()"
+        placeholder="Enter amount"
+        required
+      />
+    </div>
+
+    <div class="balance-helper" *ngIf="selectedSourceAccount">
+      Available Balance: {{ selectedSourceAccount.balance | currency:selectedSourceAccount.currency }}
+    </div>
+
+    <div class="error-message" *ngIf="balanceValidationMessage">{{ balanceValidationMessage }}</div>
+
+    <div class="form-row">
+      <label for="remarks">Remarks</label>
+      <textarea
+        id="remarks"
+        name="remarks"
+        rows="3"
+        [(ngModel)]="transferRequest.remarks"
+        placeholder="Enter remarks"
+      ></textarea>
+    </div>
+
+    <button type="submit" class="transfer-btn" [disabled]="!transferForm.form.valid || isSubmitting || !!balanceValidationMessage">
+      {{ isSubmitting ? 'Transferring...' : 'Transfer' }}
+    </button>
+
+    <div class="error-message" *ngIf="transferErrorMessage">{{ transferErrorMessage }}</div>
+  </form>
+  </ng-container>
+
+  <ng-template #transferSuccessBlock>
+    <button type="button" class="back-btn" (click)="backToTransferForm()">
+      ← Back
+    </button>
+
+    <div class="transfer-success-page" *ngIf="transferSuccessDetails">
+      <h2>Fund Transfer Successful</h2>
+      <p class="success-text">{{ transferSuccessDetails.message }}</p>
+
+      <div class="receipt-card">
+        <div class="row"><span>Transaction ID</span><strong>{{ transferSuccessDetails.transactionId }}</strong></div>
+        <div class="row"><span>Reference</span><strong>{{ transferSuccessDetails.reference }}</strong></div>
+        <div class="row"><span>From Account</span><strong>{{ transferSuccessDetails.fromAccountNumber }}</strong></div>
+        <div class="row"><span>Payee Account</span><strong>{{ transferSuccessDetails.payeeAccountNumber }}</strong></div>
+        <div class="row"><span>Payee Name</span><strong>{{ transferSuccessDetails.payeeAccountHolderName }}</strong></div>
+        <div class="row"><span>Amount</span><strong>{{ transferSuccessDetails.amount | currency:transferSuccessDetails.currency }}</strong></div>
+        <div class="row"><span>Date Time</span><strong>{{ transferSuccessDetails.transferredAt }}</strong></div>
+      </div>
+
+      <button type="button" class="new-transfer-btn" (click)="backToTransferForm()">New Fund Transfer</button>
+    </div>
+  </ng-template>
+</div>

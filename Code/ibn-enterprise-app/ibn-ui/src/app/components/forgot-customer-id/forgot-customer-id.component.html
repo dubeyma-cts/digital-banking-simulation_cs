@@ -1,0 +1,117 @@
+<div class="forgot-id-container">
+  <div class="forgot-id-card">
+    <!-- Header -->
+    <div class="recover-header">
+      <h1>Retrieve Customer ID</h1>
+      <p class="subtitle">Find your Customer ID</p>
+    </div>
+
+    <!-- Success Message -->
+    <div class="alert alert-success" *ngIf="showSuccess">
+      <span class="alert-icon">✅</span>
+      <p class="alert-message">{{ successMessage }}</p>
+    </div>
+
+    <!-- Error Message -->
+    <div class="alert alert-error" *ngIf="showError">
+      <span class="alert-icon">⚠️</span>
+      <p class="alert-message">{{ errorMessage }}</p>
+    </div>
+
+    <!-- Step 1: Enter Details -->
+    <form *ngIf="step === 1" (ngSubmit)="submitRequest()" class="recovery-form">
+      <!-- Verification Method Selection -->
+      <div class="form-group">
+        <label class="form-label">
+          <span class="label-icon">📝</span>
+          How do you want to verify?
+        </label>
+        <div class="radio-group">
+          <label class="radio-label">
+            <input
+              type="radio"
+              name="verificationMethod"
+              value="email"
+              [(ngModel)]="verificationMethod"
+              [disabled]="isLoading"
+            />
+            <span class="radio-text">Email Address</span>
+          </label>
+          <label class="radio-label">
+            <input
+              type="radio"
+              name="verificationMethod"
+              value="phone"
+              [(ngModel)]="verificationMethod"
+              [disabled]="isLoading"
+            />
+            <span class="radio-text">Phone Number</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Email Input -->
+      <div class="form-group" *ngIf="verificationMethod === 'email'">
+        <label for="email" class="form-label">
+          <span class="label-icon">📧</span>
+          Email Address
+        </label>
+        <input
+          type="email"
+          id="email"
+          [(ngModel)]="email"
+          name="email"
+          class="form-input"
+          placeholder="Enter your registered email"
+          [disabled]="isLoading"
+          autocomplete="email"
+          required
+        />
+      </div>
+
+      <!-- Phone Input -->
+      <div class="form-group" *ngIf="verificationMethod === 'phone'">
+        <label for="phoneNumber" class="form-label">
+          <span class="label-icon">📱</span>
+          Phone Number
+        </label>
+        <input
+          type="tel"
+          id="phoneNumber"
+          [(ngModel)]="phoneNumber"
+          name="phoneNumber"
+          class="form-input"
+          placeholder="Enter your registered phone number"
+          [disabled]="isLoading"
+          autocomplete="tel"
+          required
+        />
+      </div>
+
+      <!-- Submit Button -->
+      <button type="submit" class="btn-retrieve" [disabled]="isLoading">
+        <span *ngIf="!isLoading">Retrieve Customer ID</span>
+        <span *ngIf="isLoading">
+          <span class="spinner"></span>
+          Processing...
+        </span>
+      </button>
+    </form>
+
+    <!-- Step 2: Confirmation -->
+    <div *ngIf="step === 2" class="confirmation-message">
+      <p class="confirmation-icon">📬</p>
+      <p class="confirmation-text">
+        Your Customer ID has been sent successfully!
+      </p>
+      <p class="confirmation-instruction">
+        Please check your <strong>{{ verificationMethod === 'email' ? 'email' : 'phone' }}</strong> for your Customer ID.
+      </p>
+    </div>
+
+    <!-- Back to Login Link -->
+    <div class="back-link">
+      <a href="javascript:void(0)" (click)="backToLogin()">← Back to Login</a>
+    </div>
+  </div>
+</div>
