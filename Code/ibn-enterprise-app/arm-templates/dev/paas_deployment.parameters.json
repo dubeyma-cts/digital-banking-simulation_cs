@@ -1,0 +1,45 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "value": "centralus"
+    },
+    "coreAppServiceName": {
+      "value": "ibn-core-svc-prod"
+    },
+    "uiAppServiceName": {
+      "value": "ibn-ui-prod"
+    },
+    "corePlanName": {
+      "value": "ibn-core-plan-prod"
+    },
+    "uiPlanName": {
+      "value": "ibn-ui-plan-prod"
+    },
+    "logAnalyticsName": {
+      "value": "ibn-law-prod"
+    },
+    "appInsightsName": {
+      "value": "ibn-ai-prod"
+    },
+    "storageAccountName": {
+      "value": "ibnprodstg001"
+    },
+    "storageSku": {
+      "value": "Standard_LRS"
+    },
+    "blobContainerName": {
+      "value": "appdata"
+    },
+    "springProfile": {
+      "value": "prod"
+    },
+    "coreAppServicePlanSku": {
+      "value": "F1"
+    },
+    "uiAppServicePlanSku": {
+      "value": "F1"
+    }
+  }
+}

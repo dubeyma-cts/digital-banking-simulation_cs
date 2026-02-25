@@ -1,0 +1,54 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "resourceGroupName": {
+      "value": "inb"
+    },
+    "location": {
+      "value": "centralus"
+    },
+    "coreAppServiceName": {
+      "value": "inb-core-app-001"
+    },
+    "uiAppServiceName": {
+      "value": "inb-ui-app-001"
+    },
+    "corePlanName": {
+      "value": "inb-core-asp"
+    },
+    "uiPlanName": {
+      "value": "inb-ui-asp"
+    },
+    "appGatewayName": {
+      "value": "inb-appgw"
+    },
+    "appGatewayPublicIpName": {
+      "value": "inb-appgw-pip"
+    },
+    "logAnalyticsName": {
+      "value": "inb-law"
+    },
+    "storageAccountName": {
+      "value": "inbblobzrs001"
+    },
+    "sqlServerName": {
+      "value": "inb-sqlsrv-001"
+    },
+    "sqlDatabaseName": {
+      "value": "inbdb"
+    },
+    "sqlAdminLogin": {
+      "value": "sqladmininb"
+    },
+    "sqlAdminPassword": {
+      "value": "ReplaceWithStrongPassword_123!"
+    },
+    "acsName": {
+      "value": "inb-acs-001"
+    },
+    "paymentGatewayPrivateLinkServiceId": {
+      "value": ""
+    }
+  }
+}
