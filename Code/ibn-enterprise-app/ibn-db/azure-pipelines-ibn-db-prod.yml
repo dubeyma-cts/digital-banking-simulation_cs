@@ -1,0 +1,120 @@
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - ibn-db/**
+      - pom.xml
+      - azure-pipelines-ibn-db-prod.yml
+
+pr:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - ibn-db/**
+      - pom.xml
+      - azure-pipelines-ibn-db-prod.yml
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  FLYWAY_SCHEMA: INB
+  PROD_SQL_SERVER: ''
+  PROD_SQL_DATABASE: ''
+  PROD_APPROVAL_ENVIRONMENT: ibn-db-prod
+
+stages:
+  - stage: ValidateProd
+    displayName: Validate migrations (prod)
+    condition: eq(variables['Build.SourceBranch'], 'refs/heads/main')
+    jobs:
+      - job: ValidateProdJob
+        displayName: Flyway validate on prod
+        steps:
+          - checkout: self
+          - script: |
+              if [ -z "$(PROD_SQL_SERVER)" ]; then
+                echo "PROD_SQL_SERVER is required"
+                exit 1
+              fi
+              if [ -z "$(PROD_SQL_DATABASE)" ]; then
+                echo "PROD_SQL_DATABASE is required"
+                exit 1
+              fi
+              if [ -z "$(PROD_AZURE_SQL_USER)" ]; then
+                echo "PROD_AZURE_SQL_USER is required"
+                exit 1
+              fi
+              if [ -z "$(PROD_AZURE_SQL_PASSWORD)" ]; then
+                echo "PROD_AZURE_SQL_PASSWORD is required"
+                exit 1
+              fi
+            displayName: Validate prod SQL target variables
+          - task: Maven@4
+            displayName: Run flyway:validate (prod)
+            inputs:
+              mavenPomFile: pom.xml
+              goals: >
+                -pl ibn-db
+                -Dflyway.url=jdbc:sqlserver://$(PROD_SQL_SERVER).database.windows.net:1433;databaseName=$(PROD_SQL_DATABASE);encrypt=true;hostNameInCertificate=*.database.windows.net;loginTimeout=30;
+                -Dflyway.user=$(PROD_AZURE_SQL_USER)
+                -Dflyway.password=$(PROD_AZURE_SQL_PASSWORD)
+                -Dflyway.schemas=$(FLYWAY_SCHEMA)
+                -Dflyway.defaultSchema=$(FLYWAY_SCHEMA)
+                flyway:validate
+              javaHomeOption: JDKVersion
+              jdkVersionOption: '1.11'
+              mavenVersionOption: Default
+              publishJUnitResults: false
+
+  - stage: MigrateProd
+    displayName: Migrate prod (approval gated)
+    dependsOn: ValidateProd
+    condition: and(succeeded('ValidateProd'), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+    jobs:
+      - deployment: MigrateProdDeployment
+        displayName: Flyway migrate on prod
+        environment: $(PROD_APPROVAL_ENVIRONMENT)
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+                - script: |
+                    if [ -z "$(PROD_SQL_SERVER)" ]; then
+                      echo "PROD_SQL_SERVER is required"
+                      exit 1
+                    fi
+                    if [ -z "$(PROD_SQL_DATABASE)" ]; then
+                      echo "PROD_SQL_DATABASE is required"
+                      exit 1
+                    fi
+                    if [ -z "$(PROD_AZURE_SQL_USER)" ]; then
+                      echo "PROD_AZURE_SQL_USER is required"
+                      exit 1
+                    fi
+                    if [ -z "$(PROD_AZURE_SQL_PASSWORD)" ]; then
+                      echo "PROD_AZURE_SQL_PASSWORD is required"
+                      exit 1
+                    fi
+                  displayName: Validate prod SQL target variables
+                - task: Maven@4
+                  displayName: Run flyway:migrate (prod)
+                  inputs:
+                    mavenPomFile: pom.xml
+                    goals: >
+                      -pl ibn-db
+                      -Dflyway.url=jdbc:sqlserver://$(PROD_SQL_SERVER).database.windows.net:1433;databaseName=$(PROD_SQL_DATABASE);encrypt=true;hostNameInCertificate=*.database.windows.net;loginTimeout=30;
+                      -Dflyway.user=$(PROD_AZURE_SQL_USER)
+                      -Dflyway.password=$(PROD_AZURE_SQL_PASSWORD)
+                      -Dflyway.schemas=$(FLYWAY_SCHEMA)
+                      -Dflyway.defaultSchema=$(FLYWAY_SCHEMA)
+                      flyway:migrate
+                    javaHomeOption: JDKVersion
+                    jdkVersionOption: '1.11'
+                    mavenVersionOption: Default
+                    publishJUnitResults: false

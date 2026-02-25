@@ -1,0 +1,669 @@
+-- Flyway migration: initial schema
+-- Source: copied from src/main/resources/inb_h2_schema.sql and converted for Azure SQL
+-- NOTE: This migration is intended for first-time schema creation on a clean database.
+-- NOTE: Keep this as an immutable migration once applied.
+-- SAFETY NOTE: This script contains DROP TABLE statements for bootstrap/rebuild scenarios.
+-- SAFETY NOTE: Do NOT run this against an environment with data you need to preserve.
+
+-- iNB Online Banking – Azure SQL Schema
+-- Generated: 2026-02-19
+-- Notes:
+--  * JSON columns are stored as NVARCHAR(MAX) for broad H2 compatibility.
+--  * Reserved identifiers use SQL Server bracket notation: [USER], [ROLE], [SESSION], [TRANSACTION].
+
+IF NOT EXISTS (SELECT 1 FROM sys.schemas WHERE name = 'INB') EXEC('CREATE SCHEMA [INB]');
+
+-- Re-runnable safety: drop existing tables (dependencies cascade)
+DROP TABLE IF EXISTS [INB].CONFIG_APPROVAL;
+DROP TABLE IF EXISTS [INB].CONFIG_ITEM;
+DROP TABLE IF EXISTS [INB].AUDIT_EVENT;
+DROP TABLE IF EXISTS [INB].FRAUD_ALERT;
+DROP TABLE IF EXISTS [INB].NOTIFICATION;
+DROP TABLE IF EXISTS [INB].RECONCILIATION_ITEM;
+DROP TABLE IF EXISTS [INB].RECONCILIATION_RUN;
+DROP TABLE IF EXISTS [INB].STATEMENT_ARTIFACT;
+DROP TABLE IF EXISTS [INB].STATEMENT_REQUEST;
+DROP TABLE IF EXISTS [INB].[TRANSACTION];
+DROP TABLE IF EXISTS [INB].CHEQUE_STATUS_HISTORY;
+DROP TABLE IF EXISTS [INB].CHEQUE_DEPOSIT;
+DROP TABLE IF EXISTS [INB].BILL_PAYMENT;
+DROP TABLE IF EXISTS [INB].PAYMENT_SCHEDULE;
+DROP TABLE IF EXISTS [INB].BILL_ACCOUNT;
+DROP TABLE IF EXISTS [INB].BILLER;
+DROP TABLE IF EXISTS [INB].TRANSFER_EXECUTION;
+DROP TABLE IF EXISTS [INB].TRANSFER_INSTRUCTION;
+DROP TABLE IF EXISTS [INB].BENEFICIARY;
+DROP TABLE IF EXISTS [INB].IDEMPOTENCY_KEY;
+DROP TABLE IF EXISTS [INB].ACCOUNT_LIMIT;
+DROP TABLE IF EXISTS [INB].ACCOUNT_BALANCE;
+DROP TABLE IF EXISTS [INB].ACCOUNT;
+DROP TABLE IF EXISTS [INB].KYC_DOCUMENT;
+DROP TABLE IF EXISTS [INB].LOGIN_ATTEMPT;
+DROP TABLE IF EXISTS [INB].[SESSION];
+DROP TABLE IF EXISTS [INB].USER_ROLE;
+DROP TABLE IF EXISTS [INB].[ROLE];
+DROP TABLE IF EXISTS [INB].[USER];
+DROP TABLE IF EXISTS [INB].CUSTOMER;
+
+-- 1. CUSTOMER
+CREATE TABLE [INB].CUSTOMER (
+    customer_id UNIQUEIDENTIFIER PRIMARY KEY,
+    username VARCHAR(100) NOT NULL,
+    default_pwd VARCHAR(255) NOT NULL,
+    full_name VARCHAR(200) NOT NULL,
+    address_line1 VARCHAR(255),
+    address_line2 VARCHAR(255),
+    address_line3 VARCHAR(255),
+    city VARCHAR(120) NOT NULL,
+    state VARCHAR(120) NOT NULL,
+    zip INT NOT NULL,
+    account_type VARCHAR(50) NOT NULL,
+    pan_number VARCHAR(30) NOT NULL,
+    addhaar_num INT NOT NULL,
+    dob DATE,
+    pan_enc VARBINARY(MAX),
+    aadhaar_hash VARBINARY(64) NOT NULL,
+    phone VARCHAR(20) NOT NULL,
+    email VARCHAR(254) NOT NULL,
+    preferred_language VARCHAR(10) DEFAULT 'en',
+    onboarding_status VARCHAR(30) NOT NULL,
+    approved_by UNIQUEIDENTIFIER,
+    approved_at DATETIME2,
+    created_at DATETIME2 NOT NULL,
+    updated_at DATETIME2 NOT NULL,
+    CONSTRAINT UQ_CUSTOMER_PAN UNIQUE (pan_number),
+    CONSTRAINT UQ_CUSTOMER_AADHAAR UNIQUE (aadhaar_hash)
+);
+
+-- 2. USER (quoted)
+CREATE TABLE [INB].[USER] (
+    user_id UNIQUEIDENTIFIER PRIMARY KEY,
+    customer_id UNIQUEIDENTIFIER,
+    idp_subject VARCHAR(200) NOT NULL,
+    username VARCHAR(100) NOT NULL,
+    pwd VARCHAR(255),
+    email VARCHAR(254),
+    phone VARCHAR(20),
+    user_type VARCHAR(20) NOT NULL,
+    status VARCHAR(20) NOT NULL,
+    locked_until DATETIME2,
+    last_login_at DATETIME2,
+    created_at DATETIME2 NOT NULL,
+    updated_at DATETIME2 NOT NULL,
+    CONSTRAINT UQ_USER_USERNAME UNIQUE (username),
+    CONSTRAINT UQ_USER_IDP_SUBJECT UNIQUE (idp_subject),
+    CONSTRAINT FK_USER_CUSTOMER FOREIGN KEY (customer_id) REFERENCES [INB].CUSTOMER(customer_id)
+);
+
+-- Add FK from CUSTOMER.approved_by to USER.user_id
+ALTER TABLE [INB].CUSTOMER
+    ADD CONSTRAINT FK_CUSTOMER_APPROVED_BY FOREIGN KEY (approved_by) REFERENCES [INB].[USER](user_id);
+
+-- 3. ROLE (quoted)
+CREATE TABLE [INB].[ROLE] (
+    role_id UNIQUEIDENTIFIER PRIMARY KEY,
+    role_name VARCHAR(50) NOT NULL,
+    description VARCHAR(250),
+    CONSTRAINT UQ_ROLE_NAME UNIQUE (role_name)
+);
+
+-- 4. USER_ROLE (composite PK)
+CREATE TABLE [INB].USER_ROLE (
+    user_id UNIQUEIDENTIFIER NOT NULL,
+    role_id UNIQUEIDENTIFIER NOT NULL,
+    assigned_at DATETIME2 NOT NULL,
+    assigned_by UNIQUEIDENTIFIER,
+    PRIMARY KEY (user_id, role_id),
+    CONSTRAINT FK_USER_ROLE_USER FOREIGN KEY (user_id) REFERENCES [INB].[USER](user_id),
+    CONSTRAINT FK_USER_ROLE_ROLE FOREIGN KEY (role_id) REFERENCES [INB].[ROLE](role_id),
+    CONSTRAINT FK_USER_ROLE_ASSIGNED_BY FOREIGN KEY (assigned_by) REFERENCES [INB].[USER](user_id)
+);
+
+-- 5. SESSION (quoted)
+CREATE TABLE [INB].[SESSION] (
+    session_id UNIQUEIDENTIFIER PRIMARY KEY,
+    user_id UNIQUEIDENTIFIER NOT NULL,
+    created_at DATETIME2 NOT NULL,
+    expires_at DATETIME2 NOT NULL,
+    last_seen_at DATETIME2 NOT NULL,
+    ip_address VARCHAR(45) NOT NULL,
+    device_fingerprint VARCHAR(200),
+    status VARCHAR(20) NOT NULL,
+    revoked_reason VARCHAR(120),
+    correlation_id VARCHAR(64),
+    CONSTRAINT FK_SESSION_USER FOREIGN KEY (user_id) REFERENCES [INB].[USER](user_id)
+);
+
+-- 6. LOGIN_ATTEMPT
+CREATE TABLE [INB].LOGIN_ATTEMPT (
+    attempt_id UNIQUEIDENTIFIER PRIMARY KEY,
+    user_id UNIQUEIDENTIFIER,
+    username VARCHAR(100),
+    attempt_at DATETIME2 NOT NULL,
+    ip_address VARCHAR(45) NOT NULL,
+    device_fingerprint VARCHAR(200),
+    outcome VARCHAR(20) NOT NULL,
+    failure_reason VARCHAR(50),
+    correlation_id VARCHAR(64),
+    CONSTRAINT FK_LOGIN_USER FOREIGN KEY (user_id) REFERENCES [INB].[USER](user_id)
+);
+
+-- 7. KYC_DOCUMENT
+CREATE TABLE [INB].KYC_DOCUMENT (
+    kyc_doc_id UNIQUEIDENTIFIER PRIMARY KEY,
+    customer_id UNIQUEIDENTIFIER NOT NULL,
+    doc_type VARCHAR(30) NOT NULL,
+    object_uri VARCHAR(500) NOT NULL,
+    content_hash VARBINARY(32) NOT NULL,
+    mime_type VARCHAR(80) NOT NULL,
+    uploaded_at DATETIME2 NOT NULL,
+    uploaded_by UNIQUEIDENTIFIER,
+    status VARCHAR(20) NOT NULL,
+    verified_by UNIQUEIDENTIFIER,
+    verified_at DATETIME2,
+    CONSTRAINT FK_KYC_CUSTOMER FOREIGN KEY (customer_id) REFERENCES [INB].CUSTOMER(customer_id),
+    CONSTRAINT FK_KYC_UPLOADED_BY FOREIGN KEY (uploaded_by) REFERENCES [INB].[USER](user_id),
+    CONSTRAINT FK_KYC_VERIFIED_BY FOREIGN KEY (verified_by) REFERENCES [INB].[USER](user_id)
+);
+
+-- 8. ACCOUNT
+CREATE TABLE [INB].ACCOUNT (
+    account_id UNIQUEIDENTIFIER PRIMARY KEY,
+    customer_id UNIQUEIDENTIFIER NOT NULL,
+    account_number VARCHAR(30) NOT NULL,
+    account_type VARCHAR(20) NOT NULL,
+    branch_code VARCHAR(20) NOT NULL,
+    currency CHAR(3) NOT NULL,
+    status VARCHAR(20) NOT NULL,
+    opened_at DATE NOT NULL,
+    closed_at DATE,
+    created_at DATETIME2 NOT NULL,
+    updated_at DATETIME2 NOT NULL,
+    CONSTRAINT UQ_ACCOUNT_NUMBER UNIQUE (account_number),
+    CONSTRAINT FK_ACCOUNT_CUSTOMER FOREIGN KEY (customer_id) REFERENCES [INB].CUSTOMER(customer_id)
+);
+
+-- 9. ACCOUNT_BALANCE
+CREATE TABLE [INB].ACCOUNT_BALANCE (
+    account_id UNIQUEIDENTIFIER PRIMARY KEY,
+    available_balance DECIMAL(18,2) DEFAULT 1000 NOT NULL,
+    ledger_balance DECIMAL(18,2) NOT NULL,
+    as_of DATETIME2 NOT NULL,
+    overdraft_used DECIMAL(18,2) DEFAULT 0 NOT NULL,
+    CONSTRAINT FK_BALANCE_ACCOUNT FOREIGN KEY (account_id) REFERENCES [INB].ACCOUNT(account_id)
+);
+
+-- 10. ACCOUNT_LIMIT
+CREATE TABLE [INB].ACCOUNT_LIMIT (
+    limit_id UNIQUEIDENTIFIER PRIMARY KEY,
+    account_id UNIQUEIDENTIFIER NOT NULL,
+    limit_type VARCHAR(40) NOT NULL,
+    limit_value DECIMAL(18,2) NOT NULL,
+    currency CHAR(3) NOT NULL,
+    effective_from DATETIME2 NOT NULL,
+    effective_to DATETIME2,
+    configured_by UNIQUEIDENTIFIER NOT NULL,
+    configured_at DATETIME2 NOT NULL,
+    CONSTRAINT FK_LIMIT_ACCOUNT FOREIGN KEY (account_id) REFERENCES [INB].ACCOUNT(account_id),
+    CONSTRAINT FK_LIMIT_CONFIGURED_BY FOREIGN KEY (configured_by) REFERENCES [INB].[USER](user_id)
+);
+
+-- 11. IDEMPOTENCY_KEY
+CREATE TABLE [INB].IDEMPOTENCY_KEY (
+    key_id UNIQUEIDENTIFIER PRIMARY KEY,
+    owner_user_id UNIQUEIDENTIFIER NOT NULL,
+    key_hash VARBINARY(32) NOT NULL,
+    scope VARCHAR(30) NOT NULL,
+    request_fingerprint VARBINARY(32) NOT NULL,
+    status VARCHAR(20) NOT NULL,
+    response_ref VARCHAR(200),
+    created_at DATETIME2 NOT NULL,
+    expires_at DATETIME2 NOT NULL,
+    CONSTRAINT UQ_IDEMPOTENCY_HASH UNIQUE (key_hash),
+    CONSTRAINT FK_IDEMPOTENCY_OWNER FOREIGN KEY (owner_user_id) REFERENCES [INB].[USER](user_id)
+);
+
+-- 12. BENEFICIARY
+CREATE TABLE [INB].BENEFICIARY (
+    beneficiary_id UNIQUEIDENTIFIER PRIMARY KEY,
+    customer_id UNIQUEIDENTIFIER NOT NULL,
+    name VARCHAR(200) NOT NULL,
+    bank_name VARCHAR(200),
+    ifsc VARCHAR(16),
+    account_number VARCHAR(30) NOT NULL,
+    beneficiary_type VARCHAR(20) NOT NULL,
+    status VARCHAR(20) NOT NULL,
+    created_at DATETIME2 NOT NULL,
+    updated_at DATETIME2 NOT NULL,
+    CONSTRAINT FK_BENEFICIARY_CUSTOMER FOREIGN KEY (customer_id) REFERENCES [INB].CUSTOMER(customer_id)
+);
+
+-- 13. TRANSFER_INSTRUCTION
+CREATE TABLE [INB].TRANSFER_INSTRUCTION (
+    transfer_id UNIQUEIDENTIFIER PRIMARY KEY,
+    customer_id UNIQUEIDENTIFIER NOT NULL,
+    source_account_id UNIQUEIDENTIFIER NOT NULL,
+    beneficiary_id UNIQUEIDENTIFIER NOT NULL,
+    amount DECIMAL(18,2) NOT NULL,
+    currency CHAR(3) NOT NULL,
+    mode VARCHAR(20) NOT NULL,
+    status VARCHAR(20) NOT NULL,
+    idempotency_key_id UNIQUEIDENTIFIER NOT NULL,
+    risk_score DECIMAL(5,2),
+    created_at DATETIME2 NOT NULL,
+    completed_at DATETIME2,
+    reference VARCHAR(64),
+    correlation_id VARCHAR(64),
+    CONSTRAINT UQ_TRF_REFERENCE UNIQUE (reference),
+    CONSTRAINT FK_TRF_CUSTOMER FOREIGN KEY (customer_id) REFERENCES [INB].CUSTOMER(customer_id),
+    CONSTRAINT FK_TRF_SOURCE_ACCOUNT FOREIGN KEY (source_account_id) REFERENCES [INB].ACCOUNT(account_id),
+    CONSTRAINT FK_TRF_BENEFICIARY FOREIGN KEY (beneficiary_id) REFERENCES [INB].BENEFICIARY(beneficiary_id),
+    CONSTRAINT FK_TRF_IDEMPOTENCY FOREIGN KEY (idempotency_key_id) REFERENCES [INB].IDEMPOTENCY_KEY(key_id)
+);
+
+-- 14. TRANSFER_EXECUTION
+CREATE TABLE [INB].TRANSFER_EXECUTION (
+    execution_id UNIQUEIDENTIFIER PRIMARY KEY,
+    transfer_id UNIQUEIDENTIFIER NOT NULL,
+    attempt_no INT NOT NULL,
+    network VARCHAR(20) NOT NULL,
+    external_reference VARCHAR(120),
+    status VARCHAR(20) NOT NULL,
+    sent_at DATETIME2,
+    updated_at DATETIME2 NOT NULL,
+    failure_code VARCHAR(40),
+    CONSTRAINT FK_TRF_EXEC_TRANSFER FOREIGN KEY (transfer_id) REFERENCES [INB].TRANSFER_INSTRUCTION(transfer_id)
+);
+
+-- 15. BILLER
+CREATE TABLE [INB].BILLER (
+    biller_id UNIQUEIDENTIFIER PRIMARY KEY,
+    name VARCHAR(200) NOT NULL,
+    category VARCHAR(50),
+    api_reference VARCHAR(100) NOT NULL,
+    active BIT NOT NULL,
+    created_at DATETIME2 NOT NULL,
+    CONSTRAINT UQ_BILLER_APIREF UNIQUE (api_reference)
+);
+
+-- 16. BILL_ACCOUNT
+CREATE TABLE [INB].BILL_ACCOUNT (
+    bill_account_id UNIQUEIDENTIFIER PRIMARY KEY,
+    customer_id UNIQUEIDENTIFIER NOT NULL,
+    biller_id UNIQUEIDENTIFIER NOT NULL,
+    consumer_number VARCHAR(60) NOT NULL,
+    nickname VARCHAR(80),
+    status VARCHAR(20) NOT NULL,
+    created_at DATETIME2 NOT NULL,
+    updated_at DATETIME2 NOT NULL,
+    CONSTRAINT UQ_BILLACC UNIQUE (biller_id, consumer_number, customer_id),
+    CONSTRAINT FK_BILLACC_CUSTOMER FOREIGN KEY (customer_id) REFERENCES [INB].CUSTOMER(customer_id),
+    CONSTRAINT FK_BILLACC_BILLER FOREIGN KEY (biller_id) REFERENCES [INB].BILLER(biller_id)
+);
+
+-- 17. PAYMENT_SCHEDULE
+CREATE TABLE [INB].PAYMENT_SCHEDULE (
+    schedule_id UNIQUEIDENTIFIER PRIMARY KEY,
+    bill_account_id UNIQUEIDENTIFIER NOT NULL,
+    frequency VARCHAR(20) NOT NULL,
+    day_of_month INT NOT NULL,
+    start_date DATE NOT NULL,
+    end_date DATE,
+    max_amount DECIMAL(18,2),
+    status VARCHAR(20) NOT NULL,
+    created_at DATETIME2 NOT NULL,
+    updated_at DATETIME2 NOT NULL,
+    CONSTRAINT FK_SCHED_BILLACC FOREIGN KEY (bill_account_id) REFERENCES [INB].BILL_ACCOUNT(bill_account_id)
+);
+
+-- 18. BILL_PAYMENT
+CREATE TABLE [INB].BILL_PAYMENT (
+    bill_payment_id UNIQUEIDENTIFIER PRIMARY KEY,
+    customer_id UNIQUEIDENTIFIER NOT NULL,
+    source_account_id UNIQUEIDENTIFIER NOT NULL,
+    bill_account_id UNIQUEIDENTIFIER NOT NULL,
+    amount DECIMAL(18,2) NOT NULL,
+    currency CHAR(3) NOT NULL,
+    is_recurring BIT NOT NULL,
+    schedule_id UNIQUEIDENTIFIER,
+    gateway VARCHAR(30) NOT NULL,
+    gateway_reference VARCHAR(100),
+    status VARCHAR(20) NOT NULL,
+    idempotency_key_id UNIQUEIDENTIFIER NOT NULL,
+    created_at DATETIME2 NOT NULL,
+    completed_at DATETIME2,
+    reference VARCHAR(64),
+    CONSTRAINT UQ_BP_REF UNIQUE (reference),
+    CONSTRAINT FK_BP_CUSTOMER FOREIGN KEY (customer_id) REFERENCES [INB].CUSTOMER(customer_id),
+    CONSTRAINT FK_BP_SRC_ACCOUNT FOREIGN KEY (source_account_id) REFERENCES [INB].ACCOUNT(account_id),
+    CONSTRAINT FK_BP_BILL_ACCOUNT FOREIGN KEY (bill_account_id) REFERENCES [INB].BILL_ACCOUNT(bill_account_id),
+    CONSTRAINT FK_BP_SCHEDULE FOREIGN KEY (schedule_id) REFERENCES [INB].PAYMENT_SCHEDULE(schedule_id),
+    CONSTRAINT FK_BP_IDEMPOTENCY FOREIGN KEY (idempotency_key_id) REFERENCES [INB].IDEMPOTENCY_KEY(key_id)
+);
+
+-- 19. CHEQUE_DEPOSIT
+CREATE TABLE [INB].CHEQUE_DEPOSIT (
+    cheque_deposit_id UNIQUEIDENTIFIER PRIMARY KEY,
+    customer_id UNIQUEIDENTIFIER NOT NULL,
+    account_id UNIQUEIDENTIFIER NOT NULL,
+    depositor_name VARCHAR(150),
+    cheque_number VARCHAR(30) NOT NULL,
+    cheque_date DATE,
+    drawer_bank VARCHAR(200),
+    branch_name VARCHAR(200),
+    amount DECIMAL(18,2) NOT NULL,
+    currency CHAR(3) NOT NULL,
+    submitted_at DATETIME2 NOT NULL,
+    current_status VARCHAR(30) NOT NULL,
+    clearance_sla_days INT NOT NULL,
+    bounce_penalty_amount DECIMAL(18,2),
+    remarks VARCHAR(250),
+    attachment_name VARCHAR(255),
+    attmt_doc VARBINARY(MAX),
+    updated_at DATETIME2 NOT NULL,
+    CONSTRAINT FK_CHQ_CUSTOMER FOREIGN KEY (customer_id) REFERENCES [INB].CUSTOMER(customer_id),
+    CONSTRAINT FK_CHQ_ACCOUNT FOREIGN KEY (account_id) REFERENCES [INB].ACCOUNT(account_id)
+);
+
+-- 20. CHEQUE_STATUS_HISTORY
+CREATE TABLE [INB].CHEQUE_STATUS_HISTORY (
+    history_id UNIQUEIDENTIFIER PRIMARY KEY,
+    cheque_deposit_id UNIQUEIDENTIFIER NOT NULL,
+    old_status VARCHAR(30) NOT NULL,
+    new_status VARCHAR(30) NOT NULL,
+    changed_by UNIQUEIDENTIFIER NOT NULL,
+    changed_at DATETIME2 NOT NULL,
+    remarks VARCHAR(250),
+    CONSTRAINT FK_CHQ_HIST_DEPOSIT FOREIGN KEY (cheque_deposit_id) REFERENCES [INB].CHEQUE_DEPOSIT(cheque_deposit_id),
+    CONSTRAINT FK_CHQ_HIST_CHANGED_BY FOREIGN KEY (changed_by) REFERENCES [INB].[USER](user_id)
+);
+
+-- 21. TRANSACTION (quoted)
+CREATE TABLE [INB].[TRANSACTION] (
+    txn_id UNIQUEIDENTIFIER PRIMARY KEY,
+    account_id UNIQUEIDENTIFIER NOT NULL,
+    txn_type VARCHAR(30) NOT NULL,
+    direction CHAR(1) NOT NULL,
+    amount DECIMAL(18,2) NOT NULL,
+    currency CHAR(3) NOT NULL,
+    posted_at DATETIME2 NOT NULL,
+    value_date DATE NOT NULL,
+    status VARCHAR(20) NOT NULL,
+    reference VARCHAR(64),
+    related_entity_type VARCHAR(40),
+    related_entity_id UNIQUEIDENTIFIER,
+    narration VARCHAR(250),
+    correlation_id VARCHAR(64),
+    CONSTRAINT UQ_TXN_REFERENCE UNIQUE (reference),
+    CONSTRAINT FK_TXN_ACCOUNT FOREIGN KEY (account_id) REFERENCES [INB].ACCOUNT(account_id)
+);
+
+-- 22. STATEMENT_REQUEST
+CREATE TABLE [INB].STATEMENT_REQUEST (
+    statement_req_id UNIQUEIDENTIFIER PRIMARY KEY,
+    account_id UNIQUEIDENTIFIER NOT NULL,
+    request_type VARCHAR(20) NOT NULL,
+    from_date DATE,
+    to_date DATE,
+    format VARCHAR(10) NOT NULL,
+    status VARCHAR(20) NOT NULL,
+    created_by UNIQUEIDENTIFIER NOT NULL,
+    created_at DATETIME2 NOT NULL,
+    completed_at DATETIME2,
+    correlation_id VARCHAR(64),
+    CONSTRAINT FK_STMT_ACCOUNT FOREIGN KEY (account_id) REFERENCES [INB].ACCOUNT(account_id),
+    CONSTRAINT FK_STMT_CREATED_BY FOREIGN KEY (created_by) REFERENCES [INB].[USER](user_id)
+);
+
+-- 23. STATEMENT_ARTIFACT
+CREATE TABLE [INB].STATEMENT_ARTIFACT (
+    artifact_id UNIQUEIDENTIFIER PRIMARY KEY,
+    statement_req_id UNIQUEIDENTIFIER NOT NULL,
+    object_uri VARCHAR(500) NOT NULL,
+    content_hash VARBINARY(32) NOT NULL,
+    size_bytes BIGINT NOT NULL,
+    generated_at DATETIME2 NOT NULL,
+    expires_at DATETIME2,
+    mime_type VARCHAR(80) NOT NULL,
+    CONSTRAINT FK_STMT_ART_REQ FOREIGN KEY (statement_req_id) REFERENCES [INB].STATEMENT_REQUEST(statement_req_id)
+);
+
+-- 24. RECONCILIATION_RUN
+CREATE TABLE [INB].RECONCILIATION_RUN (
+    recon_run_id UNIQUEIDENTIFIER PRIMARY KEY,
+    run_type VARCHAR(20) NOT NULL,
+    business_date DATE NOT NULL,
+    status VARCHAR(20) NOT NULL,
+    started_at DATETIME2 NOT NULL,
+    completed_at DATETIME2,
+    generated_by UNIQUEIDENTIFIER NOT NULL,
+    report_object_uri VARCHAR(500),
+    correlation_id VARCHAR(64),
+    CONSTRAINT FK_RECON_RUN_GEN_BY FOREIGN KEY (generated_by) REFERENCES [INB].[USER](user_id)
+);
+
+-- 25. RECONCILIATION_ITEM
+CREATE TABLE [INB].RECONCILIATION_ITEM (
+    recon_item_id UNIQUEIDENTIFIER PRIMARY KEY,
+    recon_run_id UNIQUEIDENTIFIER NOT NULL,
+    txn_id UNIQUEIDENTIFIER NOT NULL,
+    match_status VARCHAR(20) NOT NULL,
+    notes VARCHAR(250),
+    created_at DATETIME2 NOT NULL,
+    CONSTRAINT FK_RECON_ITEM_RUN FOREIGN KEY (recon_run_id) REFERENCES [INB].RECONCILIATION_RUN(recon_run_id),
+    CONSTRAINT FK_RECON_ITEM_TXN FOREIGN KEY (txn_id) REFERENCES [INB].[TRANSACTION](txn_id)
+);
+
+-- 26. NOTIFICATION
+CREATE TABLE [INB].NOTIFICATION (
+    notification_id UNIQUEIDENTIFIER PRIMARY KEY,
+    recipient_user_id UNIQUEIDENTIFIER,
+    channel VARCHAR(10) NOT NULL,
+    template_code VARCHAR(50) NOT NULL,
+    destination VARCHAR(254) NOT NULL,
+    payload_ref VARCHAR(200),
+    status VARCHAR(20) NOT NULL,
+    provider_message_id VARCHAR(120),
+    related_entity_type VARCHAR(40),
+    related_entity_id UNIQUEIDENTIFIER,
+    created_at DATETIME2 NOT NULL,
+    sent_at DATETIME2,
+    delivered_at DATETIME2,
+    CONSTRAINT FK_NOTIFICATION_RECIP FOREIGN KEY (recipient_user_id) REFERENCES [INB].[USER](user_id)
+);
+
+-- 27. FRAUD_ALERT
+CREATE TABLE [INB].FRAUD_ALERT (
+    fraud_alert_id UNIQUEIDENTIFIER PRIMARY KEY,
+    entity_type VARCHAR(40) NOT NULL,
+    entity_id UNIQUEIDENTIFIER NOT NULL,
+    risk_score DECIMAL(5,2) NOT NULL,
+    rule_code VARCHAR(50) NOT NULL,
+    status VARCHAR(20) NOT NULL,
+    created_at DATETIME2 NOT NULL,
+    reviewed_by UNIQUEIDENTIFIER,
+    reviewed_at DATETIME2,
+    outcome VARCHAR(30),
+    notes VARCHAR(500),
+    CONSTRAINT FK_FRAUD_REVIEWED_BY FOREIGN KEY (reviewed_by) REFERENCES [INB].[USER](user_id)
+);
+
+-- 28. AUDIT_EVENT
+CREATE TABLE [INB].AUDIT_EVENT (
+    audit_id UNIQUEIDENTIFIER PRIMARY KEY,
+    actor_user_id UNIQUEIDENTIFIER NOT NULL,
+    actor_role VARCHAR(50) NOT NULL,
+    action VARCHAR(80) NOT NULL,
+    entity_type VARCHAR(60) NOT NULL,
+    entity_id UNIQUEIDENTIFIER NOT NULL,
+    outcome VARCHAR(20) NOT NULL,
+    [timestamp] DATETIME2 NOT NULL,
+    ip_address VARCHAR(45) NOT NULL,
+    device_metadata VARCHAR(400),
+    correlation_id VARCHAR(64),
+    details_json NVARCHAR(MAX),
+    CONSTRAINT FK_AUDIT_USER FOREIGN KEY (actor_user_id) REFERENCES [INB].[USER](user_id)
+);
+
+-- 29. CONFIG_ITEM
+CREATE TABLE [INB].CONFIG_ITEM (
+    config_id UNIQUEIDENTIFIER PRIMARY KEY,
+    config_key VARCHAR(100) NOT NULL,
+    scope_type VARCHAR(20) NOT NULL,
+    scope_id VARCHAR(60),
+    value_json NVARCHAR(MAX) NOT NULL,
+    version INT NOT NULL,
+    status VARCHAR(20) NOT NULL,
+    effective_from DATETIME2 NOT NULL,
+    effective_to DATETIME2,
+    created_by UNIQUEIDENTIFIER NOT NULL,
+    created_at DATETIME2 NOT NULL,
+    CONSTRAINT FK_CONFIG_CREATED_BY FOREIGN KEY (created_by) REFERENCES [INB].[USER](user_id)
+);
+
+-- 30. CONFIG_APPROVAL
+CREATE TABLE [INB].CONFIG_APPROVAL (
+    approval_id UNIQUEIDENTIFIER PRIMARY KEY,
+    config_id UNIQUEIDENTIFIER NOT NULL,
+    requested_by UNIQUEIDENTIFIER NOT NULL,
+    requested_at DATETIME2 NOT NULL,
+    approved_by UNIQUEIDENTIFIER,
+    approved_at DATETIME2,
+    status VARCHAR(20) NOT NULL,
+    comment VARCHAR(250),
+    CONSTRAINT FK_CFG_APPR_CONFIG FOREIGN KEY (config_id) REFERENCES [INB].CONFIG_ITEM(config_id),
+    CONSTRAINT FK_CFG_APPR_REQ_BY FOREIGN KEY (requested_by) REFERENCES [INB].[USER](user_id),
+    CONSTRAINT FK_CFG_APPR_APPR_BY FOREIGN KEY (approved_by) REFERENCES [INB].[USER](user_id)
+);
+
+-- =====================
+-- Indexes
+-- =====================
+
+-- CUSTOMER indexes
+CREATE INDEX IX_CUSTOMER_STATUS ON [INB].CUSTOMER(onboarding_status, created_at);
+CREATE INDEX IX_CUSTOMER_PHONE ON [INB].CUSTOMER(phone);
+
+-- USER indexes
+CREATE INDEX IX_USER_TYPE_STATUS ON [INB].[USER](user_type, status);
+CREATE INDEX IX_USER_CUSTOMER ON [INB].[USER](customer_id);
+
+-- USER_ROLE indexes
+CREATE INDEX IX_USER_ROLE_ROLE ON [INB].USER_ROLE(role_id);
+
+-- SESSION indexes
+CREATE INDEX IX_SESSION_USER_STATUS ON [INB].[SESSION](user_id, status, expires_at);
+CREATE INDEX IX_SESSION_EXPIRES ON [INB].[SESSION](expires_at);
+CREATE INDEX IX_SESSION_CORR ON [INB].[SESSION](correlation_id);
+
+-- LOGIN_ATTEMPT indexes
+CREATE INDEX IX_LOGIN_USER_TIME ON [INB].LOGIN_ATTEMPT(user_id, attempt_at);
+CREATE INDEX IX_LOGIN_IP_TIME ON [INB].LOGIN_ATTEMPT(ip_address, attempt_at);
+CREATE INDEX IX_LOGIN_USERNAME_TIME ON [INB].LOGIN_ATTEMPT(username, attempt_at);
+CREATE INDEX IX_LOGIN_OUTCOME_TIME ON [INB].LOGIN_ATTEMPT(outcome, attempt_at);
+
+-- KYC_DOCUMENT indexes
+CREATE INDEX IX_KYC_CUSTOMER_TYPE ON [INB].KYC_DOCUMENT(customer_id, doc_type);
+CREATE INDEX IX_KYC_STATUS ON [INB].KYC_DOCUMENT(status, uploaded_at);
+
+-- ACCOUNT indexes
+CREATE INDEX IX_ACCOUNT_CUSTOMER ON [INB].ACCOUNT(customer_id);
+CREATE INDEX IX_ACCOUNT_BRANCH ON [INB].ACCOUNT(branch_code);
+CREATE INDEX IX_ACCOUNT_STATUS ON [INB].ACCOUNT(status);
+
+-- ACCOUNT_BALANCE indexes
+CREATE INDEX IX_BALANCE_ASOF ON [INB].ACCOUNT_BALANCE(as_of);
+
+-- ACCOUNT_LIMIT indexes
+CREATE INDEX IX_LIMIT_ACCOUNT_TYPE ON [INB].ACCOUNT_LIMIT(account_id, limit_type, effective_from);
+
+-- IDEMPOTENCY_KEY indexes
+CREATE INDEX IX_IDEMPOTENCY_OWNER ON [INB].IDEMPOTENCY_KEY(owner_user_id, created_at);
+CREATE INDEX IX_IDEMPOTENCY_EXPIRES ON [INB].IDEMPOTENCY_KEY(expires_at);
+
+-- TRANSACTION indexes
+CREATE INDEX IX_TXN_ACCOUNT_POSTED ON [INB].[TRANSACTION](account_id, posted_at);
+CREATE INDEX IX_TXN_ACCOUNT_VALUE ON [INB].[TRANSACTION](account_id, value_date);
+CREATE INDEX IX_TXN_TYPE_TIME ON [INB].[TRANSACTION](txn_type, posted_at);
+CREATE INDEX IX_TXN_RELATED ON [INB].[TRANSACTION](related_entity_type, related_entity_id);
+CREATE INDEX IX_TXN_CORR ON [INB].[TRANSACTION](correlation_id);
+
+-- BENEFICIARY indexes
+CREATE INDEX IX_BENE_CUSTOMER ON [INB].BENEFICIARY(customer_id, status);
+CREATE INDEX IX_BENE_ACCT ON [INB].BENEFICIARY(account_number);
+
+-- TRANSFER_INSTRUCTION indexes
+CREATE INDEX IX_TRF_SRC_TIME ON [INB].TRANSFER_INSTRUCTION(source_account_id, created_at);
+CREATE INDEX IX_TRF_CUST_TIME ON [INB].TRANSFER_INSTRUCTION(customer_id, created_at);
+CREATE INDEX IX_TRF_STATUS_TIME ON [INB].TRANSFER_INSTRUCTION(status, created_at);
+
+-- TRANSFER_EXECUTION indexes
+CREATE INDEX IX_TRF_EXEC_TRF ON [INB].TRANSFER_EXECUTION(transfer_id, attempt_no);
+CREATE INDEX IX_TRF_EXEC_STATUS ON [INB].TRANSFER_EXECUTION(status, updated_at);
+
+-- BILLER indexes
+CREATE INDEX IX_BILLER_ACTIVE ON [INB].BILLER(active, name);
+
+-- BILL_ACCOUNT indexes
+CREATE INDEX IX_BILLACC_CUST ON [INB].BILL_ACCOUNT(customer_id, status);
+CREATE INDEX IX_BILLACC_BILLER ON [INB].BILL_ACCOUNT(biller_id);
+
+-- PAYMENT_SCHEDULE indexes
+CREATE INDEX IX_SCHED_BILLACC ON [INB].PAYMENT_SCHEDULE(bill_account_id, status);
+CREATE INDEX IX_SCHED_RUN ON [INB].PAYMENT_SCHEDULE(status, day_of_month);
+
+-- BILL_PAYMENT indexes
+CREATE INDEX IX_BP_SRC_TIME ON [INB].BILL_PAYMENT(source_account_id, created_at);
+CREATE INDEX IX_BP_STATUS_TIME ON [INB].BILL_PAYMENT(status, created_at);
+
+-- CHEQUE_DEPOSIT indexes
+CREATE INDEX IX_CHQ_ACC_TIME ON [INB].CHEQUE_DEPOSIT(account_id, submitted_at);
+CREATE INDEX IX_CHQ_STATUS_TIME ON [INB].CHEQUE_DEPOSIT(current_status, submitted_at);
+
+-- CHEQUE_STATUS_HISTORY indexes
+CREATE INDEX IX_CHQ_HIST_DEP_TIME ON [INB].CHEQUE_STATUS_HISTORY(cheque_deposit_id, changed_at);
+
+-- STATEMENT_REQUEST indexes
+CREATE INDEX IX_STMT_ACC_TIME ON [INB].STATEMENT_REQUEST(account_id, created_at);
+CREATE INDEX IX_STMT_STATUS_TIME ON [INB].STATEMENT_REQUEST(status, created_at);
+
+-- STATEMENT_ARTIFACT indexes
+CREATE INDEX IX_STMT_ART_REQ ON [INB].STATEMENT_ARTIFACT(statement_req_id);
+CREATE INDEX IX_STMT_ART_GEN ON [INB].STATEMENT_ARTIFACT(generated_at);
+
+-- RECONCILIATION_RUN indexes
+CREATE INDEX IX_RECON_DATE ON [INB].RECONCILIATION_RUN(business_date, run_type);
+CREATE INDEX IX_RECON_STATUS ON [INB].RECONCILIATION_RUN(status, started_at);
+
+-- RECONCILIATION_ITEM indexes
+CREATE INDEX IX_RECON_ITEM_RUN ON [INB].RECONCILIATION_ITEM(recon_run_id, match_status);
+CREATE INDEX IX_RECON_ITEM_TXN ON [INB].RECONCILIATION_ITEM(txn_id);
+
+-- NOTIFICATION indexes
+CREATE INDEX IX_NOTIF_RECIP_TIME ON [INB].NOTIFICATION(recipient_user_id, created_at);
+CREATE INDEX IX_NOTIF_STATUS_TIME ON [INB].NOTIFICATION(status, created_at);
+CREATE INDEX IX_NOTIF_RELATED ON [INB].NOTIFICATION(related_entity_type, related_entity_id);
+
+-- FRAUD_ALERT indexes
+CREATE INDEX IX_FRAUD_ENTITY ON [INB].FRAUD_ALERT(entity_type, entity_id);
+CREATE INDEX IX_FRAUD_STATUS_TIME ON [INB].FRAUD_ALERT(status, created_at);
+CREATE INDEX IX_FRAUD_SCORE ON [INB].FRAUD_ALERT(risk_score);
+
+-- AUDIT_EVENT indexes
+CREATE INDEX IX_AUDIT_TIME ON [INB].AUDIT_EVENT([timestamp]);
+CREATE INDEX IX_AUDIT_ACTOR_TIME ON [INB].AUDIT_EVENT(actor_user_id, [timestamp]);
+CREATE INDEX IX_AUDIT_ENTITY ON [INB].AUDIT_EVENT(entity_type, entity_id, [timestamp]);
+CREATE INDEX IX_AUDIT_ACTION_TIME ON [INB].AUDIT_EVENT(action, [timestamp]);
+CREATE INDEX IX_AUDIT_OUTCOME_TIME ON [INB].AUDIT_EVENT(outcome, [timestamp]);
+CREATE INDEX IX_AUDIT_CORR ON [INB].AUDIT_EVENT(correlation_id);
+
+-- CONFIG_ITEM indexes
+CREATE INDEX IX_CONFIG_KEY_SCOPE ON [INB].CONFIG_ITEM(config_key, scope_type, scope_id, status);
+CREATE INDEX IX_CONFIG_EFFECTIVE ON [INB].CONFIG_ITEM(effective_from);
+
+-- CONFIG_APPROVAL indexes
+CREATE INDEX IX_CFG_APPR_STATUS ON [INB].CONFIG_APPROVAL(status, requested_at);
+CREATE INDEX IX_CFG_APPR_CONFIG ON [INB].CONFIG_APPROVAL(config_id);
+
+
+
