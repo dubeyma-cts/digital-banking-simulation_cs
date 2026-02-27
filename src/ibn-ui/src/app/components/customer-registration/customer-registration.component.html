@@ -1,0 +1,236 @@
+<div class="registration-container">
+  <!-- Personal User View: Registration Form -->
+  <ng-container *ngIf="userType === 'personal'">
+    <button type="button" class="back-btn" (click)="onBackToLogin()">
+      ← Back to Login
+    </button>
+
+    <div class="registration-card">
+      <div class="registration-header">
+        <h2>Customer Registration</h2>
+        <p class="subtitle">
+          Register to open a new iNB account. Your request will be sent to the bank for approval.
+          You will be able to log in only after approval and confirmation letter.
+        </p>
+      </div>
+
+      <form class="registration-form" (ngSubmit)="onSubmit()" #regForm="ngForm">
+        <div class="form-grid">
+          <div class="form-row">
+            <label for="firstName">First Name</label>
+            <input id="firstName" name="firstName" type="text" [(ngModel)]="registration.firstName" required />
+          </div>
+
+          <div class="form-row">
+            <label for="lastName">Last Name</label>
+            <input id="lastName" name="lastName" type="text" [(ngModel)]="registration.lastName" required />
+          </div>
+
+          <div class="form-row">
+            <label for="aadhaar">Aadhaar</label>
+            <input
+              id="aadhaar"
+              name="aadhaar"
+              type="text"
+              [(ngModel)]="registration.aadhaar"
+              (ngModelChange)="registration.aadhaar = formatAadhaar($event)"
+              pattern="\d{12}"
+              maxlength="12"
+              placeholder="12-digit Aadhaar"
+              required
+            />
+            <small>Enter 12 digits without spaces.</small>
+          </div>
+
+          <div class="form-row">
+            <label for="pan">PAN</label>
+            <input
+              id="pan"
+              name="pan"
+              type="text"
+              [(ngModel)]="registration.pan"
+              (ngModelChange)="registration.pan = formatPan($event)"
+              pattern="[A-Z]{5}[0-9]{4}[A-Z]{1}"
+              maxlength="10"
+              placeholder="ABCDE1234F"
+              required
+            />
+            <small>Format: 5 letters, 4 digits, 1 letter (uppercase).</small>
+          </div>
+
+          <div class="form-row">
+            <label for="username">Username</label>
+            <input
+              id="username"
+              name="username"
+              type="text"
+              [(ngModel)]="registration.username"
+              pattern="[A-Za-z]+"
+              required
+            />
+            <small>Alphabets only. Case insensitive.</small>
+          </div>
+
+          <div class="form-row">
+            <label for="password">Password</label>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              [(ngModel)]="registration.password"
+              minlength="6"
+              maxlength="8"
+              pattern="[A-Za-z0-9!@#$%^&*]+"
+              required
+            />
+            <small>6-8 chars, alphanumeric and !@#$%^&* (case sensitive).</small>
+          </div>
+
+          <div class="form-row">
+            <label for="addressLine1">Address Line 1</label>
+            <input id="addressLine1" name="addressLine1" type="text" [(ngModel)]="registration.addressLine1" required />
+          </div>
+
+          <div class="form-row">
+            <label for="addressLine2">Address Line 2</label>
+            <input id="addressLine2" name="addressLine2" type="text" [(ngModel)]="registration.addressLine2" />
+          </div>
+
+          <div class="form-row">
+            <label for="addressLine3">Address Line 3</label>
+            <input id="addressLine3" name="addressLine3" type="text" [(ngModel)]="registration.addressLine3" />
+          </div>
+
+          <div class="form-row">
+            <label for="city">City</label>
+            <input id="city" name="city" type="text" [(ngModel)]="registration.city" required />
+          </div>
+
+          <div class="form-row">
+            <label for="state">State</label>
+            <input id="state" name="state" type="text" [(ngModel)]="registration.state" required />
+          </div>
+
+          <div class="form-row">
+            <label for="zip">Zip</label>
+            <input id="zip" name="zip" type="text" [(ngModel)]="registration.zip" required />
+          </div>
+
+          <div class="form-row">
+            <label for="phone">Phone</label>
+            <input
+              id="phone"
+              name="phone"
+              type="text"
+              [(ngModel)]="registration.phone"
+              (ngModelChange)="registration.phone = formatPhone($event)"
+              pattern="\d{4}-\d{4}"
+              placeholder="9999-9999"
+              required
+            />
+          </div>
+
+          <div class="form-row">
+            <label for="email">Email</label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              [(ngModel)]="registration.email"
+              required
+            />
+            <small>Format: xxx@yyy.com, xxx@yyy.co.in, etc.</small>
+          </div>
+
+          <div class="form-row">
+            <label for="accountType">Account Type</label>
+            <select id="accountType" name="accountType" [(ngModel)]="registration.accountType" required>
+              <option value="" disabled>Select account type</option>
+              <option value="Savings">Savings</option>
+              <option value="Current">Current</option>
+            </select>
+          </div>
+
+          <div class="form-row">
+            <label>Customer ID</label>
+            <input type="text" [value]="generatedCustomerId || 'System-generated after approval'" readonly />
+          </div>
+        </div>
+
+        <button type="submit" class="primary-btn" [disabled]="!regForm.form.valid">
+          Submit Registration
+        </button>
+      </form>
+
+      <div class="success-message" *ngIf="showSuccessMessage">
+        Registration submitted successfully. Your Customer ID is <strong>{{ generatedCustomerId }}</strong>.
+        Please wait for bank approval and confirmation letter before logging in.
+      </div>
+
+      <div class="success-message" *ngIf="errorMessage" style="background: #fff1f0; color: #b42318; border-left-color: #f04438;">
+        {{ errorMessage }}
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- Banker User View: Customer Registrations List with Actions -->
+  <ng-container *ngIf="userType === 'banker'">
+    <div class="banker-registration-section">
+      <h2>Customer Registration Management</h2>
+      <p class="banker-intro">Review and manage pending customer registrations</p>
+
+      <div class="customers-table-container">
+        <table class="customers-table">
+          <thead>
+            <tr>
+              <th>Customer ID</th>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th>Account Type</th>
+              <th>Registration Date</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let customer of pendingCustomers" [ngClass]="'status-' + customer.status.toLowerCase()">
+              <td>{{ customer.customerId }}</td>
+              <td>{{ customer.firstName }} {{ customer.lastName }}</td>
+              <td>{{ customer.email }}</td>
+              <td>{{ customer.phone }}</td>
+              <td>{{ customer.accountType }}</td>
+              <td>{{ customer.registrationDate }}</td>
+              <td>
+                <span class="status-badge" [ngClass]="'badge-' + customer.status.toLowerCase()">
+                  {{ customer.status }}
+                </span>
+              </td>
+              <td class="actions-cell">
+                <button
+                  class="action-btn approve-btn"
+                  (click)="approveCustomer(customer.customerId)"
+                  [disabled]="customer.status !== 'Pending'"
+                  title="Approve Registration"
+                >
+                  ✓ Approve
+                </button>
+                <button
+                  class="action-btn reject-btn"
+                  (click)="rejectCustomer(customer.customerId)"
+                  [disabled]="customer.status !== 'Pending'"
+                  title="Reject Registration"
+                >
+                  ✕ Reject
+                </button>
+              </td>
+            </tr>
+            <tr *ngIf="pendingCustomers.length === 0">
+              <td colspan="8" class="empty-state">No customer registrations to review.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </ng-container>
+</div>

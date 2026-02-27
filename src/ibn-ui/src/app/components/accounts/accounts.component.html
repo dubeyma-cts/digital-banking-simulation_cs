@@ -1,0 +1,122 @@
+<div class="accounts-component">
+  <div class="account-select">
+    <label for="accountDropdown">Select Account</label>
+    <select
+      id="accountDropdown"
+      [(ngModel)]="selectedAccountId"
+      (change)="onAccountSelectionChange()"
+      [disabled]="accounts.length === 0">
+      <option *ngFor="let account of accounts" [value]="account.accountId">
+        {{ account.accountNumber }} ({{ account.accountType }})
+      </option>
+    </select>
+  </div>
+
+  <div class="statement-panel" *ngIf="selectedAccount">
+    <h3>Account Summary</h3>
+    <table class="tx-table">
+      <tbody>
+        <tr>
+          <th>Account Number</th>
+          <td>{{ selectedAccount.accountNumber }}</td>
+        </tr>
+        <tr>
+          <th>Account Type</th>
+          <td>{{ selectedAccount.accountType }}</td>
+        </tr>
+        <tr>
+          <th>Status</th>
+          <td>{{ selectedAccount.status }}</td>
+        </tr>
+        <tr>
+          <th>Balance</th>
+          <td>{{ selectedAccount.balance | currency:selectedAccount.currency }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="account-meta" *ngIf="selectedAccount">
+    <div class="meta-item"><strong>Account Type:</strong> {{ selectedAccount.accountType }}</div>
+    <div class="meta-item"><strong>Status:</strong> {{ selectedAccount.status }}</div>
+    <div class="meta-item"><strong>Balance:</strong> {{ selectedAccount.balance | currency:selectedAccount.currency }}</div>
+  </div>
+
+  <div class="statement-switch">
+    <button type="button" class="switch-btn" [class.active]="selectedStatementType === 'mini'" (click)="setStatementType('mini')">
+      Mini Statement
+    </button>
+    <button type="button" class="switch-btn" [class.active]="selectedStatementType === 'detailed'" (click)="setStatementType('detailed')">
+      Detailed Statement
+    </button>
+  </div>
+
+  <div *ngIf="selectedStatementType === 'mini'" class="statement-panel">
+    <h3>Mini Statement for {{ selectedAccount?.accountNumber || 'Selected account' }}: Last 5 transactions</h3>
+    <table class="tx-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Description</th>
+          <th>Type</th>
+          <th>Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let transaction of miniStatementTransactions">
+          <td>{{ transaction.date }}</td>
+          <td>{{ transaction.description }}</td>
+          <td>{{ transaction.type }}</td>
+          <td>{{ transaction.amount | currency }}</td>
+        </tr>
+        <tr *ngIf="miniStatementTransactions.length === 0">
+          <td colspan="4" class="empty-state">No transactions found.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div *ngIf="selectedStatementType === 'detailed'" class="statement-panel">
+    <h3>Detailed Statement for {{ selectedAccount?.accountNumber || 'Selected account' }}</h3>
+
+    <div class="filters">
+      <div class="filter-group">
+        <label for="fromDate">From</label>
+        <input id="fromDate" type="date" [(ngModel)]="fromDate" />
+      </div>
+      <div class="filter-group">
+        <label for="toDate">To</label>
+        <input id="toDate" type="date" [(ngModel)]="toDate" />
+      </div>
+      <button type="button" class="apply-btn" (click)="applyDateFilter()">Apply</button>
+    </div>
+
+    <table class="tx-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Description</th>
+          <th>Type</th>
+          <th>Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let transaction of paginatedTransactions">
+          <td>{{ transaction.date }}</td>
+          <td>{{ transaction.description }}</td>
+          <td>{{ transaction.type }}</td>
+          <td>{{ transaction.amount | currency }}</td>
+        </tr>
+        <tr *ngIf="paginatedTransactions.length === 0">
+          <td colspan="4" class="empty-state">No transactions found for selected date range.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="pagination" *ngIf="totalPages > 1">
+      <button type="button" (click)="prevPage()" [disabled]="currentPage === 1">Previous</button>
+      <span>Page {{ currentPage }} of {{ totalPages }}</span>
+      <button type="button" (click)="nextPage()" [disabled]="currentPage === totalPages">Next</button>
+    </div>
+  </div>
+</div>

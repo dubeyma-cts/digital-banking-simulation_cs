@@ -1,0 +1,66 @@
+<div class="landing-container">
+  <aside class="sidebar">
+    <div class="brand">iBN Banking</div>
+    <nav class="nav-list">
+      <!-- Personal User Navigation -->
+      <ng-container *ngIf="userType === 'personal'">
+        <a (click)="navigateTo('accounts')" class="nav-item" [class.active]="activeSection === 'accounts'">Accounts</a>
+        <a (click)="navigateTo('fund-transfers')" class="nav-item" [class.active]="activeSection === 'fund-transfers'">Fund Transfer</a>
+        <a (click)="navigateTo('payments')" class="nav-item">Payments</a>
+        <a (click)="navigateTo('cheque-deposits')" class="nav-item" [class.active]="activeSection === 'cheque-deposits'">Cheque Deposits</a>
+        <a (click)="navigateTo('profile')" class="nav-item" [class.active]="activeSection === 'profile'">Profile</a>
+      </ng-container>
+
+      <!-- Banker User Navigation -->
+      <ng-container *ngIf="userType === 'banker'">
+        <a (click)="navigateTo('cheque-deposits')" class="nav-item" [class.active]="activeSection === 'cheque-deposits'">Cheque Deposits</a>
+        <a (click)="navigateTo('customer-registration')" class="nav-item" [class.active]="activeSection === 'customer-registration'">Customer Registration</a>
+      </ng-container>
+
+      <a (click)="onLogout()" class="nav-item nav-logout">Logout</a>
+    </nav>
+  </aside>
+
+  <main class="main-content">
+    <header class="main-header">
+      <h1>Welcome, {{ userName }}!</h1>
+      <p class="subtitle">Digital Banking Dashboard</p>
+    </header>
+
+    <section class="account-summary">
+      <div class="account-card">
+        <div class="accounts-inline" *ngIf="activeSection === 'accounts' && userType === 'personal'">
+          <app-accounts></app-accounts>
+        </div>
+
+        <div class="account-header" *ngIf="activeSection === 'fund-transfers' && userType === 'personal'">
+          <h2>Fund Transfer</h2>
+        </div>
+        <div class="accounts-inline" *ngIf="activeSection === 'fund-transfers' && userType === 'personal'">
+          <app-fund-transfers></app-fund-transfers>
+        </div>
+
+        <div class="account-header" *ngIf="activeSection === 'cheque-deposits'">
+          <h2>Cheque Deposits</h2>
+        </div>
+        <div class="accounts-inline" *ngIf="activeSection === 'cheque-deposits'">
+          <app-cheque-deposits></app-cheque-deposits>
+        </div>
+
+        <div class="account-header" *ngIf="activeSection === 'profile' && userType === 'personal'">
+          <h2>Profile</h2>
+        </div>
+        <div class="accounts-inline" *ngIf="activeSection === 'profile' && userType === 'personal'">
+          <app-profile></app-profile>
+        </div>
+
+        <div class="account-header" *ngIf="activeSection === 'customer-registration'">
+          <h2>Customer Registration</h2>
+        </div>
+        <div class="accounts-inline" *ngIf="activeSection === 'customer-registration'">
+          <app-customer-registration></app-customer-registration>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>

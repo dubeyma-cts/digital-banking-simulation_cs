@@ -1,0 +1,41 @@
+<div class="profile-component">
+  <div class="info-msg" *ngIf="isLoading">Loading profile details...</div>
+  <div class="error-msg" *ngIf="errorMessage">{{ errorMessage }}</div>
+
+  <ng-container *ngIf="!isLoading && !errorMessage">
+  <div class="profile-header">
+    <h3>Account Holder Profile</h3>
+    <span class="status">KYC: {{ profile.kycStatus }}</span>
+  </div>
+
+  <div class="profile-grid">
+    <div class="profile-card">
+      <h4>Personal Details</h4>
+      <div class="row"><span class="label">Full Name</span><span class="value">{{ profile.fullName }}</span></div>
+      <div class="row"><span class="label">Customer ID</span><span class="value">{{ profile.customerId }}</span></div>
+      <div class="row"><span class="label">Date of Birth</span><span class="value">{{ profile.dateOfBirth }}</span></div>
+      <div class="row"><span class="label">Mobile</span><span class="value">{{ profile.mobile }}</span></div>
+      <div class="row"><span class="label">Email</span><span class="value">{{ profile.email }}</span></div>
+      <div class="row"><span class="label">Address</span><span class="value">{{ profile.address }}</span></div>
+    </div>
+
+    <div class="profile-card">
+      <h4>Account Details</h4>
+      <div class="row"><span class="label">Account Number</span><span class="value">{{ profile.accountNumber }}</span></div>
+      <div class="row"><span class="label">Account Type</span><span class="value">{{ profile.accountType }}</span></div>
+      <div class="row"><span class="label">Branch</span><span class="value">{{ profile.branchName }}</span></div>
+      <div class="row"><span class="label">IFSC</span><span class="value">{{ profile.ifsc }}</span></div>
+      <div class="row"><span class="label">Nominee</span><span class="value">{{ profile.nominee }}</span></div>
+      <div class="row"><span class="label">Account Status</span><span class="value">{{ profile.accountStatus }}</span></div>
+    </div>
+
+    <div class="profile-card">
+      <h4>Identity Details</h4>
+      <div class="row"><span class="label">PAN</span><span class="value">{{ profile.pan }}</span></div>
+      <div class="row"><span class="label">Aadhaar</span><span class="value">{{ profile.aadhaarMasked }}</span></div>
+      <div class="row"><span class="label">Address Proof</span><span class="value">{{ profile.addressProof }}</span></div>
+      <div class="row"><span class="label">Communication</span><span class="value">{{ profile.communication }}</span></div>
+    </div>
+  </div>
+  </ng-container>
+</div>

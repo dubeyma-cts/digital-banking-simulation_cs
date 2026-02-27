@@ -1,0 +1,40 @@
+.transfer-success-page {
+  max-width: 720px;
+  margin: 24px auto;
+  padding: 20px;
+}
+
+.success-text {
+  color: #166534;
+  font-weight: 600;
+}
+
+.receipt-card {
+  margin-top: 16px;
+  border: 1px solid #b6d6ff;
+  border-radius: 8px;
+  padding: 12px;
+  background: #f8fbff;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #e2ebf8;
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.new-transfer-btn {
+  margin-top: 16px;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  background: #0b66d1;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
