@@ -1,0 +1,310 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "eastus"
+    },
+    "coreAppServiceName": {
+      "type": "string",
+      "metadata": {
+        "description": "Unique name for core-svc App Service"
+      }
+    },
+    "uiAppServiceName": {
+      "type": "string",
+      "metadata": {
+        "description": "Unique name for ui App Service"
+      }
+    },
+    "corePlanName": {
+      "type": "string",
+      "defaultValue": "ibn-core-plan"
+    },
+    "uiPlanName": {
+      "type": "string",
+      "defaultValue": "ibn-ui-plan"
+    },
+    "logAnalyticsName": {
+      "type": "string",
+      "defaultValue": "ibn-law"
+    },
+    "appInsightsName": {
+      "type": "string",
+      "defaultValue": "ibn-ai"
+    },
+    "storageAccountName": {
+      "type": "string",
+      "metadata": {
+        "description": "Globally unique lowercase alphanumeric (3-24 chars)"
+      }
+    },
+    "storageSku": {
+      "type": "string",
+      "defaultValue": "Standard_LRS",
+      "allowedValues": [
+        "Standard_LRS",
+        "Standard_ZRS"
+      ]
+    },
+    "blobContainerName": {
+      "type": "string",
+      "defaultValue": "appdata"
+    },
+    "springProfile": {
+      "type": "string",
+      "defaultValue": "prod"
+    },
+    "coreAppServicePlanSku": {
+      "type": "string",
+      "defaultValue": "F1",
+      "allowedValues": ["F1", "S1", "P1v3"]
+    },
+    "uiAppServicePlanSku": {
+      "type": "string",
+      "defaultValue": "F1",
+      "allowedValues": ["F1", "S1", "P1v3"]
+    }
+  },
+  "variables": {
+    "workspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('logAnalyticsName'))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Web/serverfarms",
+      "apiVersion": "2022-09-01",
+      "name": "[parameters('corePlanName')]",
+      "location": "[parameters('location')]",
+      "kind": "linux",
+      "sku": {
+        "name": "[parameters('coreAppServicePlanSku')]",
+        "tier": "[if(equals(parameters('coreAppServicePlanSku'), 'F1'), 'Free', if(equals(parameters('coreAppServicePlanSku'), 'S1'), 'Standard', 'PremiumV3'))]",
+        "capacity": 1
+      },
+      "properties": {
+        "reserved": true
+      }
+    },
+    {
+      "type": "Microsoft.Web/serverfarms",
+      "apiVersion": "2022-09-01",
+      "name": "[parameters('uiPlanName')]",
+      "location": "[parameters('location')]",
+      "kind": "linux",
+      "sku": {
+        "name": "[parameters('uiAppServicePlanSku')]",
+        "tier": "[if(equals(parameters('uiAppServicePlanSku'), 'F1'), 'Free', if(equals(parameters('uiAppServicePlanSku'), 'S1'), 'Standard', 'PremiumV3'))]",
+        "capacity": 1
+      },
+      "properties": {
+        "reserved": true
+      }
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2023-01-01",
+      "name": "[parameters('storageAccountName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "[parameters('storageSku')]"
+      },
+      "kind": "StorageV2",
+      "properties": {
+        "minimumTlsVersion": "TLS1_2",
+        "supportsHttpsTrafficOnly": true,
+        "allowBlobPublicAccess": false,
+        "allowSharedKeyAccess": true
+      }
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
+      "apiVersion": "2023-01-01",
+      "name": "[concat(parameters('storageAccountName'), '/default/', parameters('blobContainerName'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]"
+      ],
+      "properties": {
+        "publicAccess": "None"
+      }
+    },
+    {
+      "type": "Microsoft.OperationalInsights/workspaces",
+      "apiVersion": "2022-10-01",
+      "name": "[parameters('logAnalyticsName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "sku": {
+          "name": "PerGB2018"
+        },
+        "retentionInDays": 30
+      }
+    },
+    {
+      "type": "Microsoft.Insights/components",
+      "apiVersion": "2020-02-02",
+      "name": "[parameters('appInsightsName')]",
+      "location": "[parameters('location')]",
+      "kind": "web",
+      "dependsOn": [
+        "[variables('workspaceResourceId')]"
+      ],
+      "properties": {
+        "Application_Type": "web",
+        "WorkspaceResourceId": "[variables('workspaceResourceId')]"
+      }
+    },
+    {
+      "type": "Microsoft.Web/sites",
+      "apiVersion": "2022-09-01",
+      "name": "[parameters('coreAppServiceName')]",
+      "location": "[parameters('location')]",
+      "kind": "app,linux",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/serverfarms', parameters('corePlanName'))]",
+        "[resourceId('Microsoft.Insights/components', parameters('appInsightsName'))]"
+      ],
+      "properties": {
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('corePlanName'))]",
+        "httpsOnly": true,
+        "siteConfig": {
+          "linuxFxVersion": "JAVA|11-java11"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Web/sites",
+      "apiVersion": "2022-09-01",
+      "name": "[parameters('uiAppServiceName')]",
+      "location": "[parameters('location')]",
+      "kind": "app,linux",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/serverfarms', parameters('uiPlanName'))]",
+        "[resourceId('Microsoft.Insights/components', parameters('appInsightsName'))]"
+      ],
+      "properties": {
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('uiPlanName'))]",
+        "httpsOnly": true,
+        "siteConfig": {
+          "linuxFxVersion": "JAVA|11-java11"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Web/sites/config",
+      "apiVersion": "2022-09-01",
+      "name": "[concat(parameters('coreAppServiceName'), '/appsettings')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', parameters('coreAppServiceName'))]"
+      ],
+      "properties": {
+        "WEBSITE_RUN_FROM_PACKAGE": "1",
+        "SPRING_PROFILES_ACTIVE": "[parameters('springProfile')]",
+        "BlobContainer": "[parameters('blobContainerName')]",
+        "APPLICATIONINSIGHTS_CONNECTION_STRING": "[reference(resourceId('Microsoft.Insights/components', parameters('appInsightsName')), '2020-02-02').ConnectionString]"
+      }
+    },
+    {
+      "type": "Microsoft.Web/sites/config",
+      "apiVersion": "2022-09-01",
+      "name": "[concat(parameters('uiAppServiceName'), '/appsettings')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', parameters('uiAppServiceName'))]"
+      ],
+      "properties": {
+        "WEBSITE_RUN_FROM_PACKAGE": "1",
+        "SPRING_PROFILES_ACTIVE": "prod",
+        "APPLICATIONINSIGHTS_CONNECTION_STRING": "[reference(resourceId('Microsoft.Insights/components', parameters('appInsightsName')), '2020-02-02').ConnectionString]"
+      }
+    },
+    {
+      "type": "Microsoft.Web/sites/config",
+      "apiVersion": "2022-09-01",
+      "name": "[concat(parameters('coreAppServiceName'), '/connectionstrings')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', parameters('coreAppServiceName'))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]"
+      ],
+      "properties": {
+        "StorageConnection": {
+          "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', parameters('storageAccountName'), ';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName')), '2023-01-01').keys[0].value, ';EndpointSuffix=core.windows.net')]",
+          "type": "Custom"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Web/sites/providers/diagnosticSettings",
+      "apiVersion": "2021-05-01-preview",
+      "name": "[concat(parameters('coreAppServiceName'), '/Microsoft.Insights/coreDiagnostics')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', parameters('coreAppServiceName'))]",
+        "[variables('workspaceResourceId')]"
+      ],
+      "properties": {
+        "workspaceId": "[variables('workspaceResourceId')]",
+        "logs": [
+          {
+            "category": "AppServiceHTTPLogs",
+            "enabled": true
+          },
+          {
+            "category": "AppServiceConsoleLogs",
+            "enabled": true
+          },
+          {
+            "category": "AppServiceAppLogs",
+            "enabled": true
+          }
+        ],
+        "metrics": [
+          {
+            "category": "AllMetrics",
+            "enabled": true
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Web/sites/providers/diagnosticSettings",
+      "apiVersion": "2021-05-01-preview",
+      "name": "[concat(parameters('uiAppServiceName'), '/Microsoft.Insights/uiDiagnostics')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', parameters('uiAppServiceName'))]",
+        "[variables('workspaceResourceId')]"
+      ],
+      "properties": {
+        "workspaceId": "[variables('workspaceResourceId')]",
+        "logs": [
+          {
+            "category": "AppServiceHTTPLogs",
+            "enabled": true
+          },
+          {
+            "category": "AppServiceConsoleLogs",
+            "enabled": true
+          },
+          {
+            "category": "AppServiceAppLogs",
+            "enabled": true
+          }
+        ],
+        "metrics": [
+          {
+            "category": "AllMetrics",
+            "enabled": true
+          }
+        ]
+      }
+    }
+  ],
+  "outputs": {
+    "coreAppUrl": {
+      "type": "string",
+      "value": "[concat('https://', parameters('coreAppServiceName'), '.azurewebsites.net')]"
+    },
+    "uiAppUrl": {
+      "type": "string",
+      "value": "[concat('https://', parameters('uiAppServiceName'), '.azurewebsites.net')]"
+    }
+  }
+}

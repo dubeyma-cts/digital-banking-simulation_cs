@@ -1,0 +1,1055 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "resourceGroupName": {
+      "type": "string",
+      "defaultValue": "inb"
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "centralus"
+    },
+    "gatewayVnetName": {
+      "type": "string",
+      "defaultValue": "ibn-gateway"
+    },
+    "coreVnetName": {
+      "type": "string",
+      "defaultValue": "inb-core"
+    },
+    "gatewaySubnetName": {
+      "type": "string",
+      "defaultValue": "ibn-gateway-sbnet"
+    },
+    "coreIntSubnetName": {
+      "type": "string",
+      "defaultValue": "inb-core-int-sbnet"
+    },
+    "coreAcsSubnetName": {
+      "type": "string",
+      "defaultValue": "inb-core-acs-sbnet"
+    },
+    "corePayGwSubnetName": {
+      "type": "string",
+      "defaultValue": "inb-core-paygw-sbnet"
+    },
+    "coreBlobSubnetName": {
+      "type": "string",
+      "defaultValue": "inb-core-blob-sbnet"
+    },
+    "coreAzSqlSubnetName": {
+      "type": "string",
+      "defaultValue": "inb-core-azsql-sbnet"
+    },
+    "coreAppServiceName": {
+      "type": "string"
+    },
+    "uiAppServiceName": {
+      "type": "string"
+    },
+    "corePlanName": {
+      "type": "string",
+      "defaultValue": "inb-core-asp"
+    },
+    "uiPlanName": {
+      "type": "string",
+      "defaultValue": "inb-ui-asp"
+    },
+    "appGatewayName": {
+      "type": "string",
+      "defaultValue": "inb-appgw"
+    },
+    "appGatewayPublicIpName": {
+      "type": "string",
+      "defaultValue": "inb-appgw-pip"
+    },
+    "logAnalyticsName": {
+      "type": "string",
+      "defaultValue": "inb-law"
+    },
+    "storageAccountName": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 24
+    },
+    "sqlServerName": {
+      "type": "string"
+    },
+    "sqlDatabaseName": {
+      "type": "string",
+      "defaultValue": "inbdb"
+    },
+    "sqlAdminLogin": {
+      "type": "string",
+      "defaultValue": "sqladmininb"
+    },
+    "sqlAdminPassword": {
+      "type": "secureString"
+    },
+    "acsName": {
+      "type": "string"
+    },
+    "paymentGatewayPrivateLinkServiceId": {
+      "type": "string",
+      "defaultValue": ""
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Resources/resourceGroups",
+      "apiVersion": "2022-09-01",
+      "name": "[parameters('resourceGroupName')]",
+      "location": "[parameters('location')]"
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "inb-rg-deployment",
+      "resourceGroup": "[parameters('resourceGroupName')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/resourceGroups', parameters('resourceGroupName'))]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "gatewayVnetName": {
+            "value": "[parameters('gatewayVnetName')]"
+          },
+          "coreVnetName": {
+            "value": "[parameters('coreVnetName')]"
+          },
+          "gatewaySubnetName": {
+            "value": "[parameters('gatewaySubnetName')]"
+          },
+          "coreIntSubnetName": {
+            "value": "[parameters('coreIntSubnetName')]"
+          },
+          "coreAcsSubnetName": {
+            "value": "[parameters('coreAcsSubnetName')]"
+          },
+          "corePayGwSubnetName": {
+            "value": "[parameters('corePayGwSubnetName')]"
+          },
+          "coreBlobSubnetName": {
+            "value": "[parameters('coreBlobSubnetName')]"
+          },
+          "coreAzSqlSubnetName": {
+            "value": "[parameters('coreAzSqlSubnetName')]"
+          },
+          "coreAppServiceName": {
+            "value": "[parameters('coreAppServiceName')]"
+          },
+          "uiAppServiceName": {
+            "value": "[parameters('uiAppServiceName')]"
+          },
+          "corePlanName": {
+            "value": "[parameters('corePlanName')]"
+          },
+          "uiPlanName": {
+            "value": "[parameters('uiPlanName')]"
+          },
+          "appGatewayName": {
+            "value": "[parameters('appGatewayName')]"
+          },
+          "appGatewayPublicIpName": {
+            "value": "[parameters('appGatewayPublicIpName')]"
+          },
+          "logAnalyticsName": {
+            "value": "[parameters('logAnalyticsName')]"
+          },
+          "storageAccountName": {
+            "value": "[parameters('storageAccountName')]"
+          },
+          "sqlServerName": {
+            "value": "[parameters('sqlServerName')]"
+          },
+          "sqlDatabaseName": {
+            "value": "[parameters('sqlDatabaseName')]"
+          },
+          "sqlAdminLogin": {
+            "value": "[parameters('sqlAdminLogin')]"
+          },
+          "sqlAdminPassword": {
+            "value": "[parameters('sqlAdminPassword')]"
+          },
+          "acsName": {
+            "value": "[parameters('acsName')]"
+          },
+          "paymentGatewayPrivateLinkServiceId": {
+            "value": "[parameters('paymentGatewayPrivateLinkServiceId')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {
+            "location": { "type": "string" },
+            "gatewayVnetName": { "type": "string" },
+            "coreVnetName": { "type": "string" },
+            "gatewaySubnetName": { "type": "string" },
+            "coreIntSubnetName": { "type": "string" },
+            "coreAcsSubnetName": { "type": "string" },
+            "corePayGwSubnetName": { "type": "string" },
+            "coreBlobSubnetName": { "type": "string" },
+            "coreAzSqlSubnetName": { "type": "string" },
+            "coreAppServiceName": { "type": "string" },
+            "uiAppServiceName": { "type": "string" },
+            "corePlanName": { "type": "string" },
+            "uiPlanName": { "type": "string" },
+            "appGatewayName": { "type": "string" },
+            "appGatewayPublicIpName": { "type": "string" },
+            "logAnalyticsName": { "type": "string" },
+            "storageAccountName": { "type": "string" },
+            "sqlServerName": { "type": "string" },
+            "sqlDatabaseName": { "type": "string" },
+            "sqlAdminLogin": { "type": "string" },
+            "sqlAdminPassword": { "type": "secureString" },
+            "acsName": { "type": "string" },
+            "paymentGatewayPrivateLinkServiceId": { "type": "string" }
+          },
+          "variables": {
+            "gatewayAddressPrefix": "10.10.0.0/16",
+            "gatewaySubnetPrefix": "10.10.1.0/24",
+            "coreAddressPrefix": "10.20.0.0/16",
+            "coreIntPrefix": "10.20.1.0/24",
+            "coreAcsPrefix": "10.20.2.0/24",
+            "corePayGwPrefix": "10.20.3.0/24",
+            "coreBlobPrefix": "10.20.4.0/24",
+            "coreAzSqlPrefix": "10.20.5.0/24",
+            "lawResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('logAnalyticsName'))]",
+            "gatewayVnetId": "[resourceId('Microsoft.Network/virtualNetworks', parameters('gatewayVnetName'))]",
+            "coreVnetId": "[resourceId('Microsoft.Network/virtualNetworks', parameters('coreVnetName'))]"
+          },
+          "resources": [
+            {
+              "type": "Microsoft.OperationalInsights/workspaces",
+              "apiVersion": "2022-10-01",
+              "name": "[parameters('logAnalyticsName')]",
+              "location": "[parameters('location')]",
+              "properties": {
+                "sku": { "name": "PerGB2018" },
+                "retentionInDays": 30
+              }
+            },
+            {
+              "type": "Microsoft.Network/networkSecurityGroups",
+              "apiVersion": "2023-09-01",
+              "name": "nsg-ibn-gateway",
+              "location": "[parameters('location')]",
+              "properties": {
+                "securityRules": [
+                  {
+                    "name": "Allow-Internet-To-AppGw-8080",
+                    "properties": {
+                      "priority": 100,
+                      "protocol": "Tcp",
+                      "access": "Allow",
+                      "direction": "Inbound",
+                      "sourceAddressPrefix": "Internet",
+                      "sourcePortRange": "*",
+                      "destinationAddressPrefix": "*",
+                      "destinationPortRange": "8080"
+                    }
+                  },
+                  {
+                    "name": "Allow-GatewayManager-Ports",
+                    "properties": {
+                      "priority": 110,
+                      "protocol": "Tcp",
+                      "access": "Allow",
+                      "direction": "Inbound",
+                      "sourceAddressPrefix": "GatewayManager",
+                      "sourcePortRange": "*",
+                      "destinationAddressPrefix": "*",
+                      "destinationPortRange": "65200-65535"
+                    }
+                  },
+                  {
+                    "name": "Allow-AzureLoadBalancer",
+                    "properties": {
+                      "priority": 120,
+                      "protocol": "*",
+                      "access": "Allow",
+                      "direction": "Inbound",
+                      "sourceAddressPrefix": "AzureLoadBalancer",
+                      "sourcePortRange": "*",
+                      "destinationAddressPrefix": "*",
+                      "destinationPortRange": "*"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "type": "Microsoft.Network/networkSecurityGroups",
+              "apiVersion": "2023-09-01",
+              "name": "nsg-inb-core-int",
+              "location": "[parameters('location')]",
+              "properties": {
+                "securityRules": [
+                  {
+                    "name": "Allow-AppGw-To-CoreInt-8080",
+                    "properties": {
+                      "priority": 100,
+                      "protocol": "Tcp",
+                      "access": "Allow",
+                      "direction": "Inbound",
+                      "sourceAddressPrefix": "[variables('gatewaySubnetPrefix')]",
+                      "sourcePortRange": "*",
+                      "destinationAddressPrefix": "*",
+                      "destinationPortRange": "8080"
+                    }
+                  },
+                  {
+                    "name": "Allow-CoreInt-To-AppGw-8080",
+                    "properties": {
+                      "priority": 110,
+                      "protocol": "Tcp",
+                      "access": "Allow",
+                      "direction": "Outbound",
+                      "sourceAddressPrefix": "*",
+                      "sourcePortRange": "*",
+                      "destinationAddressPrefix": "[variables('gatewaySubnetPrefix')]",
+                      "destinationPortRange": "8080"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "type": "Microsoft.Network/virtualNetworks",
+              "apiVersion": "2023-09-01",
+              "name": "[parameters('gatewayVnetName')]",
+              "location": "[parameters('location')]",
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/networkSecurityGroups', 'nsg-ibn-gateway')]"
+              ],
+              "properties": {
+                "addressSpace": {
+                  "addressPrefixes": ["[variables('gatewayAddressPrefix')]"]
+                },
+                "subnets": [
+                  {
+                    "name": "[parameters('gatewaySubnetName')]",
+                    "properties": {
+                      "addressPrefix": "[variables('gatewaySubnetPrefix')]",
+                      "networkSecurityGroup": {
+                        "id": "[resourceId('Microsoft.Network/networkSecurityGroups', 'nsg-ibn-gateway')]"
+                      }
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "type": "Microsoft.Network/virtualNetworks",
+              "apiVersion": "2023-09-01",
+              "name": "[parameters('coreVnetName')]",
+              "location": "[parameters('location')]",
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/networkSecurityGroups', 'nsg-inb-core-int')]"
+              ],
+              "properties": {
+                "addressSpace": {
+                  "addressPrefixes": ["[variables('coreAddressPrefix')]"]
+                },
+                "subnets": [
+                  {
+                    "name": "[parameters('coreIntSubnetName')]",
+                    "properties": {
+                      "addressPrefix": "[variables('coreIntPrefix')]",
+                      "networkSecurityGroup": {
+                        "id": "[resourceId('Microsoft.Network/networkSecurityGroups', 'nsg-inb-core-int')]"
+                      },
+                      "delegations": [
+                        {
+                          "name": "webAppDelegation",
+                          "properties": {
+                            "serviceName": "Microsoft.Web/serverFarms"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "name": "[parameters('coreAcsSubnetName')]",
+                    "properties": {
+                      "addressPrefix": "[variables('coreAcsPrefix')]",
+                      "privateEndpointNetworkPolicies": "Disabled"
+                    }
+                  },
+                  {
+                    "name": "[parameters('corePayGwSubnetName')]",
+                    "properties": {
+                      "addressPrefix": "[variables('corePayGwPrefix')]",
+                      "privateEndpointNetworkPolicies": "Disabled"
+                    }
+                  },
+                  {
+                    "name": "[parameters('coreBlobSubnetName')]",
+                    "properties": {
+                      "addressPrefix": "[variables('coreBlobPrefix')]",
+                      "privateEndpointNetworkPolicies": "Disabled"
+                    }
+                  },
+                  {
+                    "name": "[parameters('coreAzSqlSubnetName')]",
+                    "properties": {
+                      "addressPrefix": "[variables('coreAzSqlPrefix')]",
+                      "privateEndpointNetworkPolicies": "Disabled"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
+              "apiVersion": "2023-09-01",
+              "name": "[concat(parameters('gatewayVnetName'), '/gateway-to-core')]",
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/virtualNetworks', parameters('gatewayVnetName'))]",
+                "[resourceId('Microsoft.Network/virtualNetworks', parameters('coreVnetName'))]"
+              ],
+              "properties": {
+                "allowVirtualNetworkAccess": true,
+                "allowForwardedTraffic": true,
+                "remoteVirtualNetwork": {
+                  "id": "[variables('coreVnetId')]"
+                }
+              }
+            },
+            {
+              "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
+              "apiVersion": "2023-09-01",
+              "name": "[concat(parameters('coreVnetName'), '/core-to-gateway')]",
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/virtualNetworks', parameters('gatewayVnetName'))]",
+                "[resourceId('Microsoft.Network/virtualNetworks', parameters('coreVnetName'))]"
+              ],
+              "properties": {
+                "allowVirtualNetworkAccess": true,
+                "allowForwardedTraffic": true,
+                "remoteVirtualNetwork": {
+                  "id": "[variables('gatewayVnetId')]"
+                }
+              }
+            },
+            {
+              "type": "Microsoft.Web/serverfarms",
+              "apiVersion": "2022-09-01",
+              "name": "[parameters('uiPlanName')]",
+              "location": "[parameters('location')]",
+              "sku": {
+                "name": "S1",
+                "tier": "Standard",
+                "size": "S1",
+                "capacity": 1
+              },
+              "properties": {
+                "reserved": false
+              }
+            },
+            {
+              "type": "Microsoft.Web/serverfarms",
+              "apiVersion": "2022-09-01",
+              "name": "[parameters('corePlanName')]",
+              "location": "[parameters('location')]",
+              "sku": {
+                "name": "S1",
+                "tier": "Standard",
+                "size": "S1",
+                "capacity": 1
+              },
+              "properties": {
+                "reserved": false
+              }
+            },
+            {
+              "type": "Microsoft.Web/sites",
+              "apiVersion": "2022-09-01",
+              "name": "[parameters('uiAppServiceName')]",
+              "location": "[parameters('location')]",
+              "dependsOn": [
+                "[resourceId('Microsoft.Web/serverfarms', parameters('uiPlanName'))]"
+              ],
+              "properties": {
+                "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('uiPlanName'))]",
+                "httpsOnly": true,
+                "siteConfig": {
+                  "javaVersion": "11",
+                  "javaContainer": "TOMCAT",
+                  "javaContainerVersion": "9.0",
+                  "appSettings": [
+                    { "name": "WEBSITES_PORT", "value": "8080" },
+                    { "name": "WEBSITE_VNET_ROUTE_ALL", "value": "1" },
+                    { "name": "CORE_SERVICE_URL", "value": "[concat('https://', parameters('coreAppServiceName'), '.azurewebsites.net')]" }
+                  ]
+                }
+              }
+            },
+            {
+              "type": "Microsoft.Web/sites",
+              "apiVersion": "2022-09-01",
+              "name": "[parameters('coreAppServiceName')]",
+              "location": "[parameters('location')]",
+              "dependsOn": [
+                "[resourceId('Microsoft.Web/serverfarms', parameters('corePlanName'))]"
+              ],
+              "properties": {
+                "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('corePlanName'))]",
+                "httpsOnly": true,
+                "siteConfig": {
+                  "javaVersion": "11",
+                  "javaContainer": "JAVA",
+                  "javaContainerVersion": "11",
+                  "appSettings": [
+                    { "name": "WEBSITES_PORT", "value": "8080" },
+                    { "name": "WEBSITE_VNET_ROUTE_ALL", "value": "1" }
+                  ]
+                }
+              }
+            },
+            {
+              "type": "Microsoft.Web/sites/networkConfig",
+              "apiVersion": "2022-09-01",
+              "name": "[concat(parameters('uiAppServiceName'), '/virtualNetwork')]",
+              "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('uiAppServiceName'))]",
+                "[resourceId('Microsoft.Network/virtualNetworks', parameters('coreVnetName'))]"
+              ],
+              "properties": {
+                "subnetResourceId": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('coreVnetName'), parameters('coreIntSubnetName'))]",
+                "swiftSupported": true
+              }
+            },
+            {
+              "type": "Microsoft.Web/sites/networkConfig",
+              "apiVersion": "2022-09-01",
+              "name": "[concat(parameters('coreAppServiceName'), '/virtualNetwork')]",
+              "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('coreAppServiceName'))]",
+                "[resourceId('Microsoft.Network/virtualNetworks', parameters('coreVnetName'))]"
+              ],
+              "properties": {
+                "subnetResourceId": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('coreVnetName'), parameters('coreIntSubnetName'))]",
+                "swiftSupported": true
+              }
+            },
+            {
+              "type": "Microsoft.Storage/storageAccounts",
+              "apiVersion": "2023-01-01",
+              "name": "[toLower(parameters('storageAccountName'))]",
+              "location": "[parameters('location')]",
+              "sku": {
+                "name": "Standard_LRS"
+              },
+              "kind": "StorageV2",
+              "properties": {
+                "supportsHttpsTrafficOnly": true,
+                "minimumTlsVersion": "TLS1_2",
+                "allowBlobPublicAccess": false
+              }
+            },
+            {
+              "type": "Microsoft.Sql/servers",
+              "apiVersion": "2022-05-01-preview",
+              "name": "[parameters('sqlServerName')]",
+              "location": "[parameters('location')]",
+              "properties": {
+                "administratorLogin": "[parameters('sqlAdminLogin')]",
+                "administratorLoginPassword": "[parameters('sqlAdminPassword')]",
+                "version": "12.0",
+                "publicNetworkAccess": "Disabled"
+              }
+            },
+            {
+              "type": "Microsoft.Sql/servers/databases",
+              "apiVersion": "2022-05-01-preview",
+              "name": "[concat(parameters('sqlServerName'), '/', parameters('sqlDatabaseName'))]",
+              "location": "[parameters('location')]",
+              "dependsOn": [
+                "[resourceId('Microsoft.Sql/servers', parameters('sqlServerName'))]"
+              ],
+              "sku": {
+                "name": "Basic",
+                "tier": "Basic"
+              },
+              "properties": {}
+            },
+            {
+              "type": "Microsoft.Communication/communicationServices",
+              "apiVersion": "2023-03-31",
+              "name": "[parameters('acsName')]",
+              "location": "global",
+              "properties": {
+                "dataLocation": "UnitedStates"
+              }
+            },
+            {
+              "type": "Microsoft.Network/privateDnsZones",
+              "apiVersion": "2020-06-01",
+              "name": "privatelink.database.windows.net",
+              "location": "global"
+            },
+            {
+              "type": "Microsoft.Network/privateDnsZones",
+              "apiVersion": "2020-06-01",
+              "name": "privatelink.blob.core.windows.net",
+              "location": "global"
+            },
+            {
+              "type": "Microsoft.Network/privateDnsZones",
+              "apiVersion": "2020-06-01",
+              "name": "privatelink.communication.azure.com",
+              "location": "global"
+            },
+            {
+              "type": "Microsoft.Network/privateDnsZones/virtualNetworkLinks",
+              "apiVersion": "2020-06-01",
+              "name": "[concat('privatelink.database.windows.net/', parameters('coreVnetName'), '-sql-link')]",
+              "location": "global",
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/privateDnsZones', 'privatelink.database.windows.net')]",
+                "[resourceId('Microsoft.Network/virtualNetworks', parameters('coreVnetName'))]"
+              ],
+              "properties": {
+                "registrationEnabled": false,
+                "virtualNetwork": {
+                  "id": "[variables('coreVnetId')]"
+                }
+              }
+            },
+            {
+              "type": "Microsoft.Network/privateDnsZones/virtualNetworkLinks",
+              "apiVersion": "2020-06-01",
+              "name": "[concat('privatelink.blob.core.windows.net/', parameters('coreVnetName'), '-blob-link')]",
+              "location": "global",
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/privateDnsZones', 'privatelink.blob.core.windows.net')]",
+                "[resourceId('Microsoft.Network/virtualNetworks', parameters('coreVnetName'))]"
+              ],
+              "properties": {
+                "registrationEnabled": false,
+                "virtualNetwork": {
+                  "id": "[variables('coreVnetId')]"
+                }
+              }
+            },
+            {
+              "type": "Microsoft.Network/privateDnsZones/virtualNetworkLinks",
+              "apiVersion": "2020-06-01",
+              "name": "[concat('privatelink.communication.azure.com/', parameters('coreVnetName'), '-acs-link')]",
+              "location": "global",
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/privateDnsZones', 'privatelink.communication.azure.com')]",
+                "[resourceId('Microsoft.Network/virtualNetworks', parameters('coreVnetName'))]"
+              ],
+              "properties": {
+                "registrationEnabled": false,
+                "virtualNetwork": {
+                  "id": "[variables('coreVnetId')]"
+                }
+              }
+            },
+            {
+              "type": "Microsoft.Network/privateEndpoints",
+              "apiVersion": "2023-09-01",
+              "name": "pe-azsql",
+              "location": "[parameters('location')]",
+              "dependsOn": [
+                "[resourceId('Microsoft.Sql/servers', parameters('sqlServerName'))]",
+                "[resourceId('Microsoft.Network/virtualNetworks', parameters('coreVnetName'))]"
+              ],
+              "properties": {
+                "subnet": {
+                  "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('coreVnetName'), parameters('coreAzSqlSubnetName'))]"
+                },
+                "privateLinkServiceConnections": [
+                  {
+                    "name": "sql-connection",
+                    "properties": {
+                      "privateLinkServiceId": "[resourceId('Microsoft.Sql/servers', parameters('sqlServerName'))]",
+                      "groupIds": ["sqlServer"]
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "type": "Microsoft.Network/privateEndpoints/privateDnsZoneGroups",
+              "apiVersion": "2023-09-01",
+              "name": "pe-azsql/default",
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/privateEndpoints', 'pe-azsql')]",
+                "[resourceId('Microsoft.Network/privateDnsZones', 'privatelink.database.windows.net')]"
+              ],
+              "properties": {
+                "privateDnsZoneConfigs": [
+                  {
+                    "name": "sqlDns",
+                    "properties": {
+                      "privateDnsZoneId": "[resourceId('Microsoft.Network/privateDnsZones', 'privatelink.database.windows.net')]"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "type": "Microsoft.Network/privateEndpoints",
+              "apiVersion": "2023-09-01",
+              "name": "pe-blob",
+              "location": "[parameters('location')]",
+              "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', toLower(parameters('storageAccountName')))]",
+                "[resourceId('Microsoft.Network/virtualNetworks', parameters('coreVnetName'))]"
+              ],
+              "properties": {
+                "subnet": {
+                  "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('coreVnetName'), parameters('coreBlobSubnetName'))]"
+                },
+                "privateLinkServiceConnections": [
+                  {
+                    "name": "blob-connection",
+                    "properties": {
+                      "privateLinkServiceId": "[resourceId('Microsoft.Storage/storageAccounts', toLower(parameters('storageAccountName')))]",
+                      "groupIds": ["blob"]
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "type": "Microsoft.Network/privateEndpoints/privateDnsZoneGroups",
+              "apiVersion": "2023-09-01",
+              "name": "pe-blob/default",
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/privateEndpoints', 'pe-blob')]",
+                "[resourceId('Microsoft.Network/privateDnsZones', 'privatelink.blob.core.windows.net')]"
+              ],
+              "properties": {
+                "privateDnsZoneConfigs": [
+                  {
+                    "name": "blobDns",
+                    "properties": {
+                      "privateDnsZoneId": "[resourceId('Microsoft.Network/privateDnsZones', 'privatelink.blob.core.windows.net')]"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "condition": false,
+              "type": "Microsoft.Network/privateEndpoints",
+              "apiVersion": "2023-09-01",
+              "name": "pe-acs",
+              "location": "[parameters('location')]",
+              "dependsOn": [
+                "[resourceId('Microsoft.Communication/communicationServices', parameters('acsName'))]",
+                "[resourceId('Microsoft.Network/virtualNetworks', parameters('coreVnetName'))]"
+              ],
+              "properties": {
+                "subnet": {
+                  "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('coreVnetName'), parameters('coreAcsSubnetName'))]"
+                },
+                "privateLinkServiceConnections": [
+                  {
+                    "name": "acs-connection",
+                    "properties": {
+                      "privateLinkServiceId": "[resourceId('Microsoft.Communication/communicationServices', parameters('acsName'))]",
+                      "groupIds": ["communicationServices"]
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "condition": false,
+              "type": "Microsoft.Network/privateEndpoints/privateDnsZoneGroups",
+              "apiVersion": "2023-09-01",
+              "name": "pe-acs/default",
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/privateEndpoints', 'pe-acs')]",
+                "[resourceId('Microsoft.Network/privateDnsZones', 'privatelink.communication.azure.com')]"
+              ],
+              "properties": {
+                "privateDnsZoneConfigs": [
+                  {
+                    "name": "acsDns",
+                    "properties": {
+                      "privateDnsZoneId": "[resourceId('Microsoft.Network/privateDnsZones', 'privatelink.communication.azure.com')]"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "condition": "[not(empty(parameters('paymentGatewayPrivateLinkServiceId')))]",
+              "type": "Microsoft.Network/privateEndpoints",
+              "apiVersion": "2023-09-01",
+              "name": "pe-paygw",
+              "location": "[parameters('location')]",
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/virtualNetworks', parameters('coreVnetName'))]"
+              ],
+              "properties": {
+                "subnet": {
+                  "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('coreVnetName'), parameters('corePayGwSubnetName'))]"
+                },
+                "privateLinkServiceConnections": [
+                  {
+                    "name": "paygw-connection",
+                    "properties": {
+                      "privateLinkServiceId": "[parameters('paymentGatewayPrivateLinkServiceId')]",
+                      "groupIds": ["default"]
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "type": "Microsoft.Network/publicIPAddresses",
+              "apiVersion": "2023-09-01",
+              "name": "[parameters('appGatewayPublicIpName')]",
+              "location": "[parameters('location')]",
+              "sku": {
+                "name": "Standard"
+              },
+              "properties": {
+                "publicIPAllocationMethod": "Static",
+                "publicIPAddressVersion": "IPv4"
+              }
+            },
+            {
+              "type": "Microsoft.Network/applicationGateways",
+              "apiVersion": "2023-09-01",
+              "name": "[parameters('appGatewayName')]",
+              "location": "[parameters('location')]",
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/publicIPAddresses', parameters('appGatewayPublicIpName'))]",
+                "[resourceId('Microsoft.Network/virtualNetworks', parameters('gatewayVnetName'))]",
+                "[resourceId('Microsoft.Web/sites', parameters('uiAppServiceName'))]"
+              ],
+              "properties": {
+                "sku": {
+                  "name": "Standard_v2",
+                  "tier": "Standard_v2",
+                  "capacity": 1
+                },
+                "gatewayIPConfigurations": [
+                  {
+                    "name": "appGwIpConfig",
+                    "properties": {
+                      "subnet": {
+                        "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('gatewayVnetName'), parameters('gatewaySubnetName'))]"
+                      }
+                    }
+                  }
+                ],
+                "frontendIPConfigurations": [
+                  {
+                    "name": "appGwFrontendIp",
+                    "properties": {
+                      "publicIPAddress": {
+                        "id": "[resourceId('Microsoft.Network/publicIPAddresses', parameters('appGatewayPublicIpName'))]"
+                      }
+                    }
+                  }
+                ],
+                "frontendPorts": [
+                  {
+                    "name": "port8080",
+                    "properties": {
+                      "port": 8080
+                    }
+                  }
+                ],
+                "backendAddressPools": [
+                  {
+                    "name": "uiBackendPool",
+                    "properties": {
+                      "backendAddresses": [
+                        {
+                          "fqdn": "[concat(parameters('uiAppServiceName'), '.azurewebsites.net')]"
+                        }
+                      ]
+                    }
+                  }
+                ],
+                "backendHttpSettingsCollection": [
+                  {
+                    "name": "uiHttpSetting8080",
+                    "properties": {
+                      "port": 443,
+                      "protocol": "Https",
+                      "cookieBasedAffinity": "Disabled",
+                      "requestTimeout": 60,
+                      "probe": {
+                        "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('appGatewayName')), '/probes/uiProbe')]"
+                      },
+                      "pickHostNameFromBackendAddress": true
+                    }
+                  }
+                ],
+                "probes": [
+                  {
+                    "name": "uiProbe",
+                    "properties": {
+                      "protocol": "Https",
+                      "path": "/",
+                      "interval": 30,
+                      "timeout": 30,
+                      "unhealthyThreshold": 3,
+                      "pickHostNameFromBackendHttpSettings": true,
+                      "match": {
+                        "statusCodes": ["200-403"]
+                      }
+                    }
+                  }
+                ],
+                "httpListeners": [
+                  {
+                    "name": "listener8080",
+                    "properties": {
+                      "frontendIPConfiguration": {
+                        "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('appGatewayName')), '/frontendIPConfigurations/appGwFrontendIp')]"
+                      },
+                      "frontendPort": {
+                        "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('appGatewayName')), '/frontendPorts/port8080')]"
+                      },
+                      "protocol": "Http"
+                    }
+                  }
+                ],
+                "requestRoutingRules": [
+                  {
+                    "name": "rule-ui-8080",
+                    "properties": {
+                      "ruleType": "Basic",
+                      "priority": 100,
+                      "httpListener": {
+                        "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('appGatewayName')), '/httpListeners/listener8080')]"
+                      },
+                      "backendAddressPool": {
+                        "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('appGatewayName')), '/backendAddressPools/uiBackendPool')]"
+                      },
+                      "backendHttpSettings": {
+                        "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('appGatewayName')), '/backendHttpSettingsCollection/uiHttpSetting8080')]"
+                      }
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "type": "Microsoft.Insights/diagnosticSettings",
+              "apiVersion": "2021-05-01-preview",
+              "name": "diag-appgw",
+              "scope": "[resourceId('Microsoft.Network/applicationGateways', parameters('appGatewayName'))]",
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/applicationGateways', parameters('appGatewayName'))]",
+                "[variables('lawResourceId')]"
+              ],
+              "properties": {
+                "workspaceId": "[variables('lawResourceId')]",
+                "logs": [{ "categoryGroup": "allLogs", "enabled": true }],
+                "metrics": [{ "category": "AllMetrics", "enabled": true }]
+              }
+            },
+            {
+              "type": "Microsoft.Insights/diagnosticSettings",
+              "apiVersion": "2021-05-01-preview",
+              "name": "diag-uiapp",
+              "scope": "[resourceId('Microsoft.Web/sites', parameters('uiAppServiceName'))]",
+              "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('uiAppServiceName'))]",
+                "[variables('lawResourceId')]"
+              ],
+              "properties": {
+                "workspaceId": "[variables('lawResourceId')]",
+                "logs": [{ "categoryGroup": "allLogs", "enabled": true }],
+                "metrics": [{ "category": "AllMetrics", "enabled": true }]
+              }
+            },
+            {
+              "type": "Microsoft.Insights/diagnosticSettings",
+              "apiVersion": "2021-05-01-preview",
+              "name": "diag-coreapp",
+              "scope": "[resourceId('Microsoft.Web/sites', parameters('coreAppServiceName'))]",
+              "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', parameters('coreAppServiceName'))]",
+                "[variables('lawResourceId')]"
+              ],
+              "properties": {
+                "workspaceId": "[variables('lawResourceId')]",
+                "logs": [{ "categoryGroup": "allLogs", "enabled": true }],
+                "metrics": [{ "category": "AllMetrics", "enabled": true }]
+              }
+            },
+            {
+              "type": "Microsoft.Insights/diagnosticSettings",
+              "apiVersion": "2021-05-01-preview",
+              "name": "diag-storage",
+              "scope": "[resourceId('Microsoft.Storage/storageAccounts', toLower(parameters('storageAccountName')))]",
+              "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', toLower(parameters('storageAccountName')))]",
+                "[variables('lawResourceId')]"
+              ],
+              "properties": {
+                "workspaceId": "[variables('lawResourceId')]",
+                "logs": [],
+                "metrics": [{ "category": "AllMetrics", "enabled": true }]
+              }
+            },
+            {
+              "type": "Microsoft.Insights/diagnosticSettings",
+              "apiVersion": "2021-05-01-preview",
+              "name": "diag-sql",
+              "scope": "[resourceId('Microsoft.Sql/servers', parameters('sqlServerName'))]",
+              "dependsOn": [
+                "[resourceId('Microsoft.Sql/servers', parameters('sqlServerName'))]",
+                "[variables('lawResourceId')]"
+              ],
+              "properties": {
+                "workspaceId": "[variables('lawResourceId')]",
+                "logs": [],
+                "metrics": [{ "category": "AllMetrics", "enabled": true }]
+              }
+            },
+            {
+              "type": "Microsoft.Insights/diagnosticSettings",
+              "apiVersion": "2021-05-01-preview",
+              "name": "diag-acs",
+              "scope": "[resourceId('Microsoft.Communication/communicationServices', parameters('acsName'))]",
+              "dependsOn": [
+                "[resourceId('Microsoft.Communication/communicationServices', parameters('acsName'))]",
+                "[variables('lawResourceId')]"
+              ],
+              "properties": {
+                "workspaceId": "[variables('lawResourceId')]",
+                "logs": [{ "categoryGroup": "allLogs", "enabled": true }],
+                "metrics": [{ "category": "AllMetrics", "enabled": true }]
+              }
+            }
+          ],
+          "outputs": {
+            "coreUrl": {
+              "type": "string",
+              "value": "[concat('https://', parameters('coreAppServiceName'), '.azurewebsites.net')]"
+            },
+            "uiUrl": {
+              "type": "string",
+              "value": "[concat('https://', parameters('uiAppServiceName'), '.azurewebsites.net')]"
+            }
+          }
+        }
+      }
+    }
+  ]
+}
