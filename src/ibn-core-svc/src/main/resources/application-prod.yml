@@ -1,0 +1,10 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: none
+
+# Use environment variables for datasource and credentials in production.
+# Example:
+# SPRING_DATASOURCE_URL=jdbc:sqlserver://<server>.database.windows.net:1433;database=<db>;encrypt=true;hostNameInCertificate=*.database.windows.net;loginTimeout=30;
+# SPRING_DATASOURCE_USERNAME=<principal or user>
+# SPRING_DATASOURCE_PASSWORD=<secret>
