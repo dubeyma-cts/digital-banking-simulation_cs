@@ -1,0 +1,101 @@
+generate multi-module maven project structure for 3-tier architecture. The module names are ibn-ui, ibn-core-svc, ibn-message-svc, ibn-external-svc  Front-end in Angular and back-end in Springboot. Divide the back-end into 3 layers - controller, service, dao layer. Technologies choices for back-end - Use spring AOP for cross-cutting concerns i.e. user request authorization, notification, audit-logging etc, controller using springmvc, dao layer using spring data jpa and default orm as hibernate, Oracle database. A middleware reliable service for java-based message broker using Apache ActiveMQ. Front-end UI, Backend, and Middleware are 4 deployable components: UI, backend core, middleware message service, and external service - can be build and deployed independently. Package structure as com.ibn.core for common util classes, com.ibn.controller for spring controller etc.
+
+
+login component
+-------------------------------------
+generate angular code for login component. login page should have customer id as username, password. Logon button- on click of this credential will be sent to backend service and if the the response is success then will redirect to user landing page. else show invalid credential error and remaing login attempt left. after 1st unsuccessful login attempt enable captcha. after 3rd unsuccessful attempt show message on ui as user account has been locked contact administrator. show hyperlink for forgot password and forgot customer id. use nice css with light color combination and consider the usability principles.
+
+----
+login restful svc
+----------------
+generate spring rest api in ibn-core-svc module for corresponding endpoints of login component in ui. For example, for all the endpoints in login.service.ts in ibn-ui, generate corresponding spring code in ibn-core-svc.  Initially create controller layer  and name class as per functionality like AuthenticationController etc. and put the logic there
+
+------
+post login landing page
+-----------------------
+remove the existing cards in ibn-ui landing page and add welcome message, account summary card with details (account number, balance, customer id ). Navigation Sidebar: Accounts, Fund Transfers, Payments, Cheque Deposits, Profile, Logout 
+
+---
+Accounts
+--------
+Generate component ui for Accounts 
+on click of Sidebar navigation "Accounts"  add below and the component should render in the account summary content area.
+
+
+ radio button -  Savings Account Info : default selected and display below 
+                    
+radio button -  Current Account Info : on selection display below details
+
+On selection of Savings Account Info, show below details:
+  Interest rate, withdrawal limits
+  Switch button for Mini Statement and Detailed Statement
+      On selection of Mini Statement shows - Mini Statement for Saving account: Last 5 transactions in table
+      On selection of Detailed Statement shows - Detailed Statement for Saving account: Date range filter and display result in paginated table.
+
+On selection of Savings Account Info, show below details:
+  Interest rate, withdrawal limits
+  Switch button for Mini Statement and Detailed Statement
+      On selection of Mini Statement shows - Mini Statement for Current account: Last 5 transactions in table
+      On selection of Detailed Statement shows - Detailed Statement for Current account: Date range filter and display result in paginated table.
+
+-------
+Fund Transfer
+-----------------
+
+Generate component ui for Fund Transfer 
+on click of Sidebar navigation "Fund Transfer"  add below and the previously rendered component i.e. account summary content area should be cleared and the new component should render with below fields.
+- Fields:
+- From Account dropdown 
+- Payee Account Number
+- Amount
+- Remarks
+- Button: Transfer - on click of the transfer button success message should display
+
+---------
+Check Deposits
+---------------
+Generate component ui for Cheque Deposits 
+on click of Sidebar navigation "Cheque Deposits"  add below and the previously rendered component i.e. account summary content area should be cleared and the new component should render with below fields.
+
+The customer can deposit cheques issued against his name by filling online bank slip(s). After filling in the details, the customer can submit and print the filled slip. There should be optional attachment field for uploading pdf/jpg/jpeg image. List the saved Cheque deposits in table at the bottom of Cheque Deposit Form and default status will be "Not received"
+
+---------
+Profile
+--------------
+Generate component ui for Profile 
+on click of Sidebar navigation "Profile"  add below and the previously rendered component i.e. account summary content area should be cleared and the new component should render with below fields. Add basic details related to an account we generally have in any Bank details.
+
+----
+User Registration
+------
+In place of Reset button add Customer Registration button. generate component ui for Customer registration form and onclick navigate to the form, below details:
+
+The customer should be able to register online to open an account with iNB. During registration, the customer will specify the type of account he wants to open. The registration request will be sent to the bank for an approval. The customer will be registered & the account will be created by the bank after the approval. The bank will send a letter to the customer once the registration is done. The customer should be able to logon to the site only after that. Customer can either have a Savings account or a Current account. Back button should display at the top to go back to Login page.
+
+-------
+banker login page
+-------------------
+add breadcrum on top of the login page, add dropdown options: Banker, Personal. Onclick of Personal option redirect to login page. On click of Banker create new login component which have fields: Login Id and Password. Logon button and Forgot button - keeping rest of look and feel same as of existing login page. Onclick successful validation of credential redirect to same landing page but with different option on Sidebar - Cheque Deposits, Customer Registrations. In the Banker landing page - The cheque deposits will have only the table listing all the saved users with additional column of actions (received, Sent for Clearance) button. and Customer Registrations will have the list of all registered users with additional column actions: approve reject button
+
+
+-----
+save update customer registration
+---------------------------------
+generate code for persisting customer registration form data to backend. Write corresponding API in ibn-core-svc. Controller->Service-->Dao layer. make use of the Customer jpa entity. while saving the data append firstname and lastname by space and save it into fullname field in Customer entity. Create two API methods for save and update. and integrate api call with ui.
+
+---------------
+fund transfer
+------------------
+On customer landing Fund Transfer page add two fields: Confirm Payee Account Number - account number entered in it must match the value in Payee account Number; On successful validation fetch the account holder account details i.e. name from db and autopopulate in next field below it that is Account Holder Name(this not editable). Add the transaction details in transfer table and Success scenario must update both account holder's accountbalance in backend. On successful transfer, show the readonly transaction details on new page along with transaction id and success message and button for new Fund transfer.
+
+-------
+session tracking
+--------------
+implement workflow for continuous session tracking and force logout after inactivity of 3 minutes. implement using cross-cutting concerns and validation at every requests. session entity are already there and corresponding ddl schema.
+
+
+----------
+ARM Template
+------------------
+create ARM template for below requirement: Create resource group inb and resource inside it for central region,
+two virtual network - ibn-gateway, inb-core and peer them. For ibn-gateway vnet, create 1 subnet and install application gateway. Define NSG for internet incoming request and forward to ui app service running on port 8080. For ibn-core vnet, create 4 subnets: 1. inb-core-int-sbnet with NSG to accept request from application gateway and respond back; ui and core app service call route/installed via this. ui app service internally call to ui-core app service. 2. inb-core-acs-sbnet: core app service to connect privately to azure communication service, 3. inb-core-paygw-sbnet: core app service to connect privately to payment gateway service i.e. paypal, 4. inb-core-blob-sbnet: core app service to connect privately to blob zrs service. configure and create resources i.e. acs, blob zrs, app services for core and ui, and log analytics for all the services and activities. 
